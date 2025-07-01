@@ -33,34 +33,73 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
     merchantId = user.uid;
 
     try {
-      // جلب الجوائز المفعلة
+      // --- الخطة أ: محاولة الاستعلام المباشر الذي يعتمد على الفهرس ---
+      print("محاولة تنفيذ الاستعلام المباشر (يتطلب فهرس)...");
       final rewardsResponse = await FirebaseFirestore.instance
           .collection('rewards')
-          .where('merchantId', isEqualTo: merchantId!)
-          .orderBy('createdAt', descending: true)
+          .where('merchant_id', isEqualTo: merchantId!)
+          .where('active', isEqualTo: true)
+          .orderBy('created_at', descending: true)
           .get();
 
       rewards = rewardsResponse.docs
           .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
           .toList();
-
-      // جلب سجل الاستبدال
-      final redeemedResponse = await FirebaseFirestore.instance
-          .collection('redeemed_rewards')
-          .where('merchantId', isEqualTo: merchantId!)
-          .orderBy('redeemedAt', descending: true)
-          .get();
-
-      redeemed = redeemedResponse.docs
-          .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
-          .toList();
+      print("نجح الاستعلام المباشر!");
 
     } catch (e) {
-       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ في جلب البيانات: $e')),
-        );
+      // --- الخطة ب: إذا فشل الاستعلام الأول، نلجأ للفلترة اليدوية ---
+      print("فشل الاستعلام المباشر. اللجوء إلى الفلترة اليدوية كخطة بديلة...");
+      if (e.toString().contains("requires an index")) {
+         if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('الفهرس غير موجود. يتم جلب البيانات بطريقة بديلة...'), backgroundColor: Colors.orange),
+            );
+         }
+        // 1. جلب كل جوائز التاجر بدون فلترة الحالة أو ترتيب
+        final fallbackResponse = await FirebaseFirestore.instance
+            .collection('rewards')
+            .where('merchant_id', isEqualTo: merchantId!)
+            .get();
+        
+        // 2. الفلترة داخل التطبيق
+        var filteredRewards = fallbackResponse.docs
+            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+            .where((reward) => reward['active'] == true)
+            .toList();
+
+        // 3. الترتيب داخل التطبيق
+        filteredRewards.sort((a, b) {
+          Timestamp tsA = a['created_at'] ?? Timestamp.now();
+          Timestamp tsB = b['created_at'] ?? Timestamp.now();
+          return tsB.compareTo(tsA); // For descending order
+        });
+
+        rewards = filteredRewards;
+
+      } else {
+        // إذا كان الخطأ لسبب آخر غير الفهرس
+         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('حدث خطأ غير متوقع: $e')),
+          );
+        }
       }
+    }
+
+    try {
+        // جلب سجل الاستبدال (يمكن تطبيق نفس المنطق هنا إذا لزم الأمر)
+        final redeemedResponse = await FirebaseFirestore.instance
+            .collection('redeemed_rewards')
+            .where('merchant_id', isEqualTo: merchantId!)
+            .orderBy('redeemedAt', descending: true)
+            .get();
+
+        redeemed = redeemedResponse.docs
+            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+            .toList();
+    } catch (e) {
+        print("خطأ في جلب سجل الاستبدال: $e");
     }
 
 
