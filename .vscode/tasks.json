@@ -1,0 +1,13 @@
+{
+  // تعريف مهمة تشغيل التطبيق
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "تشغيل تطبيق التاجر",
+      "type": "shell",
+      "command": "flutter run",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

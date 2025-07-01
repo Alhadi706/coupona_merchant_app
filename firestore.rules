@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // قاعدة مؤقتة للاختبار: اسمح لأي مستخدم مسجل الدخول بقراءة أي مستند
+    match /{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // تعطيل الكتابة مؤقتاً للجميع
+    }
+
+    // القاعدة الأدق التي سنعود إليها لاحقاً
+    // match /merchants/{merchantId} {
+    //   allow read, write: if request.auth != null && request.auth.uid == merchantId;
+    // }
+  }
+}
