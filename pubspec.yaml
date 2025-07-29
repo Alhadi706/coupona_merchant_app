@@ -52,6 +52,7 @@ dependencies:
   flutter_map: ^6.1.0
   latlong2: ^0.9.1
   http: ^1.2.1
+  supabase_flutter: ^2.9.1
 
   flutter_localizations:
     sdk: flutter

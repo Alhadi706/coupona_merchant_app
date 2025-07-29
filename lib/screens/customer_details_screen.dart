@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CustomerDetailsScreen extends StatelessWidget {
   final String customerId;
@@ -41,6 +42,9 @@ class CustomerDetailsScreen extends StatelessWidget {
               const SizedBox(height: 24),
               const Text('سجل الفواتير', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               _CustomerReceipts(customerId: customerId),
+              const SizedBox(height: 24),
+              const Text('عروض الزبون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              _CustomerOffers(customerId: customerId),
             ],
           );
         },
@@ -151,5 +155,61 @@ class _CustomerReceipts extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _CustomerOffers extends StatelessWidget {
+  final String customerId;
+  const _CustomerOffers({required this.customerId});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchOffers(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Text('حدث خطأ أثناء جلب العروض: ${snapshot.error}');
+        }
+        final offers = snapshot.data ?? [];
+        if (offers.isEmpty) {
+          return const Text('لا يوجد عروض لهذا الزبون');
+        }
+        return Column(
+          children: offers.map((offer) {
+            return Card(
+              child: ListTile(
+                leading: offer['image_url'] != null
+                    ? Image.network(offer['image_url'], width: 40, height: 40, fit: BoxFit.cover)
+                    : const Icon(Icons.local_offer, color: Colors.blue),
+                title: Text(offer['title'] ?? 'بدون عنوان'),
+                subtitle: Text(offer['description'] ?? ''),
+                trailing: ElevatedButton.icon(
+                  icon: const Icon(Icons.thumb_up),
+                  label: const Text('دعم العرض'),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('تم دعم العرض!')),
+                    );
+                    // هنا يمكنك إضافة منطق دعم العرض في Supabase إذا رغبت
+                  },
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchOffers() async {
+    final supabase = Supabase.instance.client;
+    final response = await supabase
+        .from('offers')
+        .select()
+        .eq('user_id', customerId);
+    return List<Map<String, dynamic>>.from(response);
   }
 }

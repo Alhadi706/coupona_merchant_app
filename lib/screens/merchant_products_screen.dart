@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hive/hive.dart';
-import 'package:coupona_merchant/widgets/cached_firestore_list.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MerchantProductsScreen extends StatefulWidget {
   const MerchantProductsScreen({Key? key}) : super(key: key);
@@ -43,11 +41,12 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
               final name = _nameController.text.trim();
               final points = int.tryParse(_pointsController.text.trim()) ?? 0;
               if (name.isNotEmpty && points > 0) {
-                await FirebaseFirestore.instance.collection('merchant_products').add({
+                final supabase = Supabase.instance.client;
+                await supabase.from('merchant_products').insert({
                   'merchantId': FirebaseAuth.instance.currentUser?.uid,
                   'name': name,
                   'points': points,
-                  'createdAt': DateTime.now(),
+                  'createdAt': DateTime.now().toIso8601String(),
                 });
                 Navigator.pop(ctx);
               }
@@ -57,6 +56,17 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
         ],
       ),
     );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchProducts() async {
+    final supabase = Supabase.instance.client;
+    final merchantId = FirebaseAuth.instance.currentUser?.uid ?? 'demo_merchant_uid';
+    final response = await supabase
+        .from('merchant_products')
+        .select()
+        .eq('merchantId', merchantId)
+        .order('createdAt', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
   }
 
   @override
@@ -80,20 +90,32 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
             child: Text('[DEBUG][Widget] MerchantProductsScreen loaded!', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
           Expanded(
-            child: CachedFirestoreList<Map<String, dynamic>>(
-              query: FirebaseFirestore.instance
-                  .collection('merchant_products')
-                  .where('merchantId', isEqualTo: merchantId)
-                  .orderBy('createdAt', descending: true),
-              itemBuilder: (context, product) {
-                return Card(
-                  child: ListTile(
-                    title: Text(product['name'] ?? ''),
-                    subtitle: Text('النقاط: ${product['points'] ?? 0}'),
-                  ),
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchProducts(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+                }
+                final products = snapshot.data ?? [];
+                if (products.isEmpty) {
+                  return const Center(child: Text('لا توجد منتجات بعد'));
+                }
+                return ListView.builder(
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    final product = products[index];
+                    return Card(
+                      child: ListTile(
+                        title: Text(product['name'] ?? ''),
+                        subtitle: Text('النقاط: ${product['points'] ?? 0}'),
+                      ),
+                    );
+                  },
                 );
               },
-              emptyWidget: const Center(child: Text('لا توجد منتجات بعد')),
             ),
           ),
         ],

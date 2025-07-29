@@ -1,124 +1,176 @@
+import 'package:coupona_merchant/screens/merchant_customers_screen.dart';
+import 'package:coupona_merchant/screens/merchant_offers_screen.dart';
+import 'package:coupona_merchant/screens/merchant_reports_screen.dart';
+import 'package:coupona_merchant/screens/merchant_rewards_screen.dart';
+import 'package:coupona_merchant/screens/settings_screen.dart';
+import 'package:coupona_merchant/screens/store_community_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:your_app_name/screens/complete_profile_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart'; // لاستخدام الحافظة
 
-class MerchantDashboardScreen extends StatelessWidget {
+class MerchantDashboardScreen extends StatefulWidget {
   const MerchantDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return const Scaffold(body: Center(child: Text('لا يوجد مستخدم مسجل')));
+  State<MerchantDashboardScreen> createState() => _MerchantDashboardScreenState();
+}
+
+class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
+  String _storeName = 'لوحة التحكم';
+  String? _merchantCode;
+  final _supabase = Supabase.instance.client;
+  final _user = FirebaseAuth.instance.currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_user != null) {
+      _fetchMerchantData();
     }
+  }
 
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('merchants')
-          .doc(user.uid)
-          .get(),
-      builder: (context, snapshot) {
-        // حالة التحميل
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        // حالة الخطأ
-        if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(
-              child: Text('خطأ في جلب البيانات: ${snapshot.error}')),
-          );
-        }
-
-        // إذا لم توجد بيانات
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('لوحة التحكم')),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('لم يتم العثور على بيانات المتجر'),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const CompleteProfileScreen(),
-                      ),
-                    ),
-                    child: const Text('إكمال الملف الشخصي'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        // إذا كانت البيانات موجودة
-        final merchantData = snapshot.data!.data() as Map<String, dynamic>;
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(merchantData['store_name'] ?? 'لوحة التحكم'),
-          ),
-          body: Center(
-            child: SizedBox(
-              width: 500,
-              child: GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                padding: const EdgeInsets.all(24),
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                children: [
-                  _DashboardTile(
-                    icon: Icons.storefront,
-                    label: 'العروض',
-                    onTap: () => Navigator.of(context).pushNamed('/dashboard/offers'),
-                  ),
-                  _DashboardTile(
-                    icon: Icons.card_giftcard,
-                    label: 'الجوائز',
-                    onTap: () => Navigator.of(context).pushNamed('/dashboard/rewards'),
-                  ),
-                  _DashboardTile(
-                    icon: Icons.receipt_long,
-                    label: 'الكاشير',
-                    onTap: () => Navigator.of(context).pushNamed('/dashboard/cashier'),
-                  ),
-                  _DashboardTile(
-                    icon: Icons.people,
-                    label: 'الزبائن',
-                    onTap: () => Navigator.of(context).pushNamed('/dashboard/customers'),
-                  ),
-                  _DashboardTile(
-                    icon: Icons.chat_bubble,
-                    label: 'المحادثات',
-                    onTap: () => Navigator.of(context).pushNamed('/dashboard/chat'),
-                  ),
-                  _DashboardTile(
-                    icon: Icons.analytics,
-                    label: 'التحليلات',
-                    onTap: () => Navigator.of(context).pushNamed('/dashboard/analytics'),
-                  ),
-                  _DashboardTile(
-                    icon: Icons.flag,
-                    label: 'البلاغات',
-                    onTap: () => Navigator.of(context).pushNamed('/dashboard/reports'),
-                  ),
-                  _DashboardTile(
-                    icon: Icons.settings,
-                    label: 'الإعدادات',
-                    onTap: () => Navigator.of(context).pushNamed('/dashboard/settings'),
-                  ),
-                ],
-              ),
-            ),
-          ),
+  Future<void> _fetchMerchantData() async {
+    try {
+      final data = await _supabase
+          .from('merchants')
+          .select('store_name, merchant_code')
+          .eq('id', _user!.uid)
+          .single();
+      if (mounted) {
+        setState(() {
+          _storeName = data['store_name'] ?? 'لوحة التحكم';
+          _merchantCode = data['merchant_code'];
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في جلب بيانات المتجر: $e')),
         );
-      },
+      }
+    }
+  }
+
+  void _showMerchantCodeDialog() {
+    if (_merchantCode == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('رمز التاجر غير متوفر حاليًا')),
+      );
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('رمز التاجر الخاص بك'),
+        content: Text(
+          _merchantCode!,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: _merchantCode!));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('تم نسخ الرمز إلى الحافظة')),
+              );
+              Navigator.of(context).pop();
+            },
+            child: const Text('نسخ الرمز'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_storeName),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.vpn_key),
+            onPressed: _showMerchantCodeDialog,
+            tooltip: 'عرض رمز التاجر',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              await Supabase.instance.client.auth.signOut();
+              // لا تستخدم context في async gap
+              if (mounted) {
+                context.go('/login');
+              }
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: SizedBox(
+          width: 500,
+          child: GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(24),
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            children: [
+              _DashboardTile(
+                icon: Icons.storefront,
+                label: 'العروض',
+                onTap: () => context.go('/offers'),
+              ),
+              _DashboardTile(
+                icon: Icons.card_giftcard,
+                label: 'الجوائز',
+                onTap: () => context.go('/rewards'),
+              ),
+              _DashboardTile(
+                icon: Icons.people,
+                label: 'زبائن المحل',
+                onTap: () => context.go('/customers'),
+              ),
+              _DashboardTile(
+                icon: Icons.chat_bubble,
+                label: 'مجتمع المحل',
+                onTap: () {
+                  final userId = _user?.uid;
+                  if (userId != null) {
+                    context.go('/community/$userId');
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('لا يمكن الوصول للمجتمع، المستخدم غير مسجل')),
+                    );
+                  }
+                },
+              ),
+              _DashboardTile(
+                icon: Icons.bar_chart,
+                label: 'التقارير',
+                onTap: () => context.go('/reports'),
+              ),
+              _DashboardTile(
+                icon: Icons.settings,
+                label: 'الإعدادات',
+                onTap: () => context.go('/settings'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

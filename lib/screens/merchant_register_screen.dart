@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'pick_location_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/supabase_service.dart';
+import 'package:collection/collection.dart';
 
 class MerchantRegisterScreen extends StatefulWidget {
   const MerchantRegisterScreen({Key? key}) : super(key: key);
@@ -31,6 +34,16 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
   bool useOtherActivity = false;
   bool _loading = false;
   LatLng? pickedLocation;
+
+  // خريطة رموز النشاط بالإنجليزي
+  final Map<String, String> activityTypeCodes = {
+    'مقهى': 'CF',
+    'مطعم': 'TR',
+    'متجر ملابس': 'CL',
+    'صيدلية': 'PH',
+    'سوبرماركت': 'SM',
+    'أخرى...': 'OT',
+  };
 
   Future<void> _register() async {
     setState(() => _loading = true);
@@ -78,6 +91,48 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
       final fbUserCred = await fb_auth.FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
       final user = fbUserCred.user;
       if (user != null) {
+        // توليد رمز مختصر للتاجر بالإنجليزي
+        String cityCode = 'TRP'; // رمز ثابت أو استنتاج من المدينة لاحقاً
+        String typeCode = activityTypeCodes[activityType] ?? 'OT';
+        final merchantCode = await SupabaseService.generateMerchantCode(cityCode, typeCode);
+        // إضافة بيانات التاجر في جدول merchants في Supabase مباشرة
+        try {
+          await SupabaseService.client.from('merchants').insert({
+            'store_name': storeName,
+            'location': '${pickedLocation!.latitude},${pickedLocation!.longitude}',
+            'email': email,
+            'phone': phone,
+            'logo_url': 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+            'role': 'merchant',
+            'activity_type': activityType,
+            'created_at': DateTime.now().toIso8601String(),
+            'user_id': user.uid,
+            'merchant_code': merchantCode,
+          });
+          // إنشاء قروب محل تلقائيًا في Supabase
+          try {
+            // تحقق من وجود قروب محل مسبقاً قبل الإنشاء
+            final existingGroup = await SupabaseService.client
+                .from('store_groups')
+                .select()
+                .eq('adminid', user.uid)
+                .maybeSingle();
+            if (existingGroup == null) {
+              await SupabaseService.client.from('store_groups').insert({
+                'adminid': user.uid,
+                'storename': storeName,
+                'createdat': DateTime.now().toIso8601String(),
+              });
+            }
+          } catch (e) {
+            debugPrint('خطأ أثناء إنشاء قروب المحل في Supabase: $e');
+          }
+        } catch (e) {
+          debugPrint('خطأ أثناء إضافة بيانات التاجر في Supabase: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('خطأ أثناء إضافة بيانات التاجر في Supabase: $e')),
+          );
+        }
         // تخزين بيانات التاجر في مجموعة users (مطابقة مع تطبيق الزبون)
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'id': user.uid,
@@ -133,6 +188,21 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
       if (mounted) {
         setState(() => _loading = false);
       }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    testSupabaseRead();
+  }
+
+  void testSupabaseRead() async {
+    try {
+      final response = await SupabaseService.client.from('merchants').select().limit(1);
+      debugPrint('Test read merchants: ' + response.toString());
+    } catch (e) {
+      debugPrint('Test read merchants ERROR: ' + e.toString());
     }
   }
 

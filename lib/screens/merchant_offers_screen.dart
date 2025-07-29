@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:coupona_merchant/screens/add_offer_screen.dart';
 import 'package:hive/hive.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../widgets/address_from_latlng.dart';
 
@@ -15,39 +16,29 @@ class MerchantOffersScreen extends StatefulWidget {
 }
 
 class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
-  final String _merchantId = FirebaseAuth.instance.currentUser?.uid ?? '';
-  Stream<List<Map<String, dynamic>>>? _offersStream;
+  String? _merchantId;
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    if (_merchantId.isNotEmpty) {
-      _offersStream = _getOffersStream();
-    }
+    // استخدم FirebaseAuth للحصول على معرف المستخدم الصحيح
+    final user = FirebaseAuth.instance.currentUser;
+    _merchantId = user?.uid;
   }
 
   Stream<List<Map<String, dynamic>>> _getOffersStream() {
-    Query query = FirebaseFirestore.instance
-        .collection('offers')
-        .where('merchantId', isEqualTo: _merchantId)
-        .orderBy('createdAt', descending: true);
-
-    return query.snapshots().map((snapshot) {
-      final offers = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        return data;
-      }).toList();
-
-      if (_searchQuery.isNotEmpty) {
-        return offers.where((offer) {
-          final title = offer['title']?.toString().toLowerCase() ?? '';
-          return title.contains(_searchQuery.toLowerCase());
-        }).toList();
-      }
-      return offers;
-    });
+    final supabase = Supabase.instance.client;
+    if (_merchantId == null) {
+      // أرجع stream فارغ إذا لم يكن هناك معرف تاجر
+      return const Stream<List<Map<String, dynamic>>>.empty();
+    }
+    return supabase
+        .from('offers')
+        .stream(primaryKey: ['id'])
+        .eq('merchant_id', _merchantId!)
+        .order('createdAt', ascending: false)
+        .map((offers) => List<Map<String, dynamic>>.from(offers));
   }
 
   Future<void> deleteOffer(String offerId) async {
@@ -58,7 +49,8 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
       return;
     }
     try {
-      await FirebaseFirestore.instance.collection('offers').doc(offerId).delete();
+      final supabase = Supabase.instance.client;
+      await supabase.from('offers').delete().eq('id', offerId);
       final box = await Hive.openBox('offers_$_merchantId');
       await box.delete(offerId);
       if (mounted) {
@@ -77,10 +69,8 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
 
   Future<void> toggleOfferStatus(String offerId, bool currentStatus) async {
     try {
-      await FirebaseFirestore.instance
-          .collection('offers')
-          .doc(offerId)
-          .update({'isActive': !currentStatus});
+      final supabase = Supabase.instance.client;
+      await supabase.from('offers').update({'isActive': !currentStatus}).eq('id', offerId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم تغيير حالة العرض بنجاح.')),
@@ -97,6 +87,11 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_merchantId == null || _merchantId!.isEmpty) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('إدارة العروض'),
@@ -108,7 +103,7 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => AddOfferScreen(merchantId: _merchantId),
+                  builder: (context) => AddOfferScreen(merchantId: _merchantId!),
                 ),
               );
             },
@@ -123,7 +118,6 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value;
-                  _offersStream = _getOffersStream();
                 });
               },
               decoration: InputDecoration(
@@ -140,7 +134,7 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _offersStream,
+              stream: _getOffersStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -151,7 +145,16 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('لا توجد عروض حالياً.'));
                 }
-                final offers = snapshot.data!;
+                // تصفية النتائج هنا فقط
+                final offers = _searchQuery.isEmpty
+                    ? snapshot.data!
+                    : snapshot.data!.where((offer) {
+                        final title = offer['title']?.toString().toLowerCase() ?? '';
+                        return title.contains(_searchQuery.toLowerCase());
+                      }).toList();
+                if (offers.isEmpty) {
+                  return const Center(child: Text('لا توجد نتائج مطابقة.'));
+                }
                 return ListView.builder(
                   padding: const EdgeInsets.all(8),
                   itemCount: offers.length,
@@ -185,11 +188,14 @@ class _OfferCard extends StatelessWidget {
     required this.onToggleStatus,
   });
 
-  Future<DocumentSnapshot> _getMerchantDetails() {
-    return FirebaseFirestore.instance
-        .collection('merchants')
-        .doc(offer['merchantId'])
-        .get();
+  Future<Map<String, dynamic>?> _getMerchantDetails() async {
+    final supabase = Supabase.instance.client;
+    final response = await supabase
+        .from('merchants')
+        .select()
+        .eq('id', offer['merchant_id'])
+        .single();
+    return response;
   }
 
   @override
@@ -211,14 +217,13 @@ class _OfferCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: FutureBuilder<DocumentSnapshot>(
+        child: FutureBuilder<Map<String, dynamic>?>(
           future: _getMerchantDetails(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              // Show a placeholder while loading merchant data
               return _buildCardContent(context, null, isActive, type, displayEndDate);
             }
-            final merchantData = snapshot.data!.data() as Map<String, dynamic>?;
+            final merchantData = snapshot.data;
             return _buildCardContent(context, merchantData, isActive, type, displayEndDate);
           },
         ),
@@ -261,14 +266,21 @@ class _OfferCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: Image.network(
-                offer['imageUrl'] ?? 'https://placehold.co/100x100?text=Offer',
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.sell, size: 80, color: Colors.grey),
-              ),
+              child: (offer['imageUrl'] != null && offer['imageUrl'].toString().isNotEmpty)
+                  ? Image.network(
+                      offer['imageUrl'],
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.sell, size: 80, color: Colors.grey),
+                    )
+                  : Container(
+                      width: 80,
+                      height: 80,
+                      color: Colors.grey.shade200,
+                      child: const Icon(Icons.sell, size: 50, color: Colors.grey),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(

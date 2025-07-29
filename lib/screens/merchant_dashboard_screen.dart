@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/services.dart';
 
 class MerchantDashboardScreen extends StatefulWidget {
   const MerchantDashboardScreen({Key? key}) : super(key: key);
@@ -18,6 +20,8 @@ class MerchantDashboardScreen extends StatefulWidget {
 class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
   int _selectedIndex = 0;
   String _storeName = 'لوحة التحكم';
+  String? _merchantCode;
+  bool _loadingCode = true;
 
   final List<Widget> _screens = [
     const MerchantAnalyticsScreen(),
@@ -39,6 +43,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
   void initState() {
     super.initState();
     _fetchMerchantData();
+    _fetchMerchantCode();
   }
 
   Future<void> _fetchMerchantData() async {
@@ -58,6 +63,27 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
     }
   }
 
+  Future<void> _fetchMerchantCode() async {
+    final supabase = Supabase.instance.client;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _merchantCode = null;
+        _loadingCode = false;
+      });
+      return;
+    }
+    final res = await supabase
+        .from('merchants')
+        .select('merchant_code')
+        .eq('user_id', user.uid)
+        .maybeSingle();
+    setState(() {
+      _merchantCode = res != null ? res['merchant_code'] as String? : null;
+      _loadingCode = false;
+    });
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -71,10 +97,62 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final merchantId = user?.uid ?? '';
     return Scaffold(
       appBar: AppBar(
         title: Text(_selectedIndex == 0 ? _storeName : _screenTitles[_selectedIndex]),
         actions: [
+          _loadingCode
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  ),
+                )
+              : (_merchantCode != null && _merchantCode!.isNotEmpty)
+                  ? IconButton(
+                      icon: const Icon(Icons.vpn_key),
+                      tooltip: 'رمز التاجر',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('رمز التاجر'),
+                            content: Row(
+                              children: [
+                                Expanded(
+                                  child: SelectableText(
+                                    _merchantCode!,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.copy),
+                                  tooltip: 'نسخ الرمز',
+                                  onPressed: () {
+                                    Clipboard.setData(ClipboardData(text: _merchantCode!));
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ رمز التاجر')));
+                                  },
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('إغلاق'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    )
+                  : const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('لا يوجد رمز تاجر', style: TextStyle(color: Colors.white)),
+                    ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {

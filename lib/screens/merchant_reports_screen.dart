@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MerchantReportsScreen extends StatelessWidget {
   const MerchantReportsScreen({Key? key}) : super(key: key);
@@ -18,11 +18,8 @@ class MerchantReportsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('بلاغات الزبائن')),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('reports')
-            .where('merchantId', isEqualTo: user.uid)
-            .snapshots(),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _fetchReports(user.uid),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('حدث خطأ في جلب البيانات: ${snapshot.error}'));
@@ -30,13 +27,13 @@ class MerchantReportsScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final docs = snapshot.data?.docs ?? [];
+          final docs = snapshot.data ?? [];
           if (docs.isEmpty) {
             return const Center(child: Text('لا توجد بلاغات حتى الآن'));
           }
           docs.sort((a, b) {
-            final aTs = (a.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
-            final bTs = (b.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
+            final aTs = DateTime.tryParse(a['createdAt']?.toString() ?? '');
+            final bTs = DateTime.tryParse(b['createdAt']?.toString() ?? '');
             if (bTs == null) return -1;
             if (aTs == null) return 1;
             return bTs.compareTo(aTs);
@@ -45,13 +42,13 @@ class MerchantReportsScreen extends StatelessWidget {
             itemCount: docs.length,
             separatorBuilder: (_, __) => const Divider(),
             itemBuilder: (context, i) {
-              final report = docs[i].data() as Map<String, dynamic>;
+              final report = docs[i];
               return ListTile(
                 leading: const Icon(Icons.report, color: Colors.red),
                 title: Text(report['title'] ?? 'بلاغ بدون عنوان'),
                 subtitle: Text(report['description'] ?? ''),
                 trailing: Text(report['createdAt'] != null
-                    ? (report['createdAt'] as Timestamp).toDate().toString()
+                    ? DateTime.tryParse(report['createdAt'].toString())?.toString() ?? ''
                     : ''),
               );
             },
@@ -59,5 +56,14 @@ class MerchantReportsScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchReports(String merchantId) async {
+    final supabase = Supabase.instance.client;
+    final response = await supabase
+        .from('reports')
+        .select()
+        .eq('merchantId', merchantId);
+    return List<Map<String, dynamic>>.from(response);
   }
 }

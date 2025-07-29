@@ -1,10 +1,14 @@
-import 'dart:io';
-
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:coupona_merchant/services/auth_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:latlong2/latlong.dart';
 
-import '../services/auth_manager.dart';
+import 'pick_location_screen.dart';
 
 class AddOfferScreen extends StatefulWidget {
   final String merchantId; // تغيير إلى غير nullable
@@ -17,62 +21,211 @@ class AddOfferScreen extends StatefulWidget {
 }
 
 class _AddOfferScreenState extends State<AddOfferScreen> {
-  String _merchantId = ''; // تغيير إلى غير nullable مع قيمة افتراضية
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   bool _loading = false;
+  String? _merchantId;
 
-  // ...existing variables...
+  // Controllers and variables for form fields
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _originalPriceController = TextEditingController();
+  final _discountPercentageController = TextEditingController();
+  DateTime? _startDate;
+  DateTime? _endDate;
+  File? _imageFile;
+  String? _existingImageUrl;
+  LatLng? pickedLocation;
+
+  final List<String> offerTypes = [
+    'خصم مباشر',
+    'هدية مع الشراء',
+    'كوبون',
+    'عرض لفترة محدودة',
+    'آخر...'
+  ];
+  String? selectedOfferType;
 
   @override
   void initState() {
     super.initState();
-    _merchantId = widget.merchantId; // تعيين القيمة مباشرةً
-    _initAuthAndData();
+    _initData();
   }
 
-  Future<void> _initAuthAndData() async {
-    print('[AddOfferScreen] بدء التحقق من المصادقة المزدوجة...');
-    await AuthManager.ensureAuth();
-    final fbUser = FirebaseAuth.instance.currentUser;
-    print('[AddOfferScreen] بعد ensureAuth: Firebase user: \\${fbUser?.uid}');
+  Future<void> _initData() async {
     setState(() {
-      _merchantId = widget.merchantId.isNotEmpty ? widget.merchantId : fbUser?.uid ?? '';
-      print('[AddOfferScreen] merchantId النهائي: \\$_merchantId');
+      _loading = true;
     });
-    if (_merchantId.isEmpty) {
-      print('[AddOfferScreen] تعذر تحديد هوية التاجر بعد المصادقة!');
+
+    // Ensure user is authenticated
+    await AuthManager.ensureAuth();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تعذر تحديد هوية التاجر. يرجى إعادة تسجيل الدخول.')),
+          const SnackBar(
+              content: Text('يجب تسجيل الدخول أولاً.'),
+              backgroundColor: Colors.red),
         );
+        Navigator.of(context).pop();
       }
       return;
     }
-    // ...بقية الدالة كما هي...
+    _merchantId = user.uid;
+
+    // If editing an offer, populate the fields
+    if (widget.offer != null) {
+      _titleController.text = widget.offer!['title'] ?? '';
+      _descriptionController.text = widget.offer!['description'] ?? '';
+      _originalPriceController.text =
+          widget.offer!['originalPrice']?.toString() ?? '';
+      _discountPercentageController.text =
+          widget.offer!['discountPercentage']?.toString() ?? '';
+      _startDate = (widget.offer!['startDate'] as Timestamp?)?.toDate();
+      _endDate = (widget.offer!['endDate'] as Timestamp?)?.toDate();
+      _existingImageUrl = widget.offer!['imageUrl'];
+
+      if (widget.offer!['location'] != null && widget.offer!['location'] is Map) {
+        final loc = widget.offer!['location'];
+        pickedLocation = LatLng(loc['lat'] ?? 0.0, loc['lng'] ?? 0.0);
+      }
+      if (widget.offer!['type'] != null) {
+        selectedOfferType = widget.offer!['type'];
+      }
+    }
+
+    setState(() {
+      _loading = false;
+    });
   }
 
-  Future<void> _fetchMerchantLocation() async {
-    if (_merchantId.isEmpty) return; // الآن يمكن استخدام isEmpty مباشرة
-    // ...بقية الدالة...
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _originalPriceController.dispose();
+    _discountPercentageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> _pickDate(BuildContext context, bool isStartDate) async {
+    final initialDate = isStartDate
+        ? (_startDate ?? DateTime.now())
+        : (_endDate ?? _startDate ?? DateTime.now());
+    final newDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (newDate != null) {
+      setState(() {
+        if (isStartDate) {
+          _startDate = newDate;
+        } else {
+          _endDate = newDate;
+        }
+      });
+    }
+  }
+
+  Future<String?> _uploadImage() async {
+    if (_imageFile == null) return _existingImageUrl;
+
+    if (_merchantId == null) {
+      throw Exception('User not authenticated');
+    }
+    final fileName =
+        'offers/$_merchantId-${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final ref = FirebaseStorage.instance.ref().child(fileName);
+    final uploadTask = await ref.putFile(_imageFile!);
+    return await uploadTask.ref.getDownloadURL();
   }
 
   Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    if (_startDate == null || _endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('الرجاء تحديد تاريخ البدء والانتهاء'),
+            backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (_imageFile == null && _existingImageUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('الرجاء اختيار صورة للعرض'),
+            backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (pickedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار موقع العرض على الخريطة'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (selectedOfferType == null || selectedOfferType!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار نوع العرض'), backgroundColor: Colors.red),
+      );
+      setState(() => _loading = false);
+      return;
+    }
+
+    setState(() => _loading = true);
+
     try {
-      if (_merchantId.isEmpty) {
-        throw Exception('Merchant ID is empty');
+      final imageUrl = await _uploadImage();
+      final offerData = {
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'originalPrice': double.parse(_originalPriceController.text),
+        'discountPercentage': int.parse(_discountPercentageController.text),
+        'startDate': Timestamp.fromDate(_startDate!),
+        'endDate': Timestamp.fromDate(_endDate!),
+        'imageUrl': imageUrl,
+        'merchantId': _merchantId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'location': {'lat': pickedLocation!.latitude, 'lng': pickedLocation!.longitude},
+        'type': selectedOfferType,
+      };
+
+      final collection = FirebaseFirestore.instance.collection('offers');
+      if (widget.offerId != null) {
+        await collection.doc(widget.offerId).update(offerData);
+      } else {
+        await collection.add(offerData);
       }
 
-      if (!_formKey.currentState!.validate()) {
-        throw Exception('Please fill all required fields');
-      }
-
-      // ... بقية الدالة
-    } catch (e, stackTrace) {
-      print('Error submitting offer: $e');
-      print(stackTrace);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: \\${e.toString()}')),
+          SnackBar(
+              content: Text(widget.offerId == null
+                  ? 'تم إضافة العرض بنجاح'
+                  : 'تم تحديث العرض بنجاح'),
+              backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('حدث خطأ: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -82,61 +235,207 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
     }
   }
 
-  Future<String?> _uploadImageToFirebase(File? imageFile) async {
-    if (imageFile == null) return null;
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) throw Exception('User not authenticated');
-      final fileName = 'offers/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final storageRef = FirebaseStorage.instance.ref().child(fileName);
-      final uploadTask = await storageRef.putFile(imageFile);
-      return await uploadTask.ref.getDownloadURL();
-    } catch (e) {
-      print('Error uploading image: $e');
-      throw Exception('Failed to upload image');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_merchantId.isEmpty) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 20),
-              Text(
-                'جاري تحميل بيانات التاجر...\nMerchantId: \\$_merchantId',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              TextButton(
-                onPressed: _initAuthAndData,
-                child: const Text('إعادة المحاولة'),
-              ),
-              // إضافة زر لإظهار معلومات المصادقة
-              TextButton(
-                onPressed: () {
-                  final fbUser = FirebaseAuth.instance.currentUser;
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('معلومات المصادقة'),
-                      content: Text('Firebase UID: \\${fbUser?.uid}'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.offer == null ? 'إضافة عرض جديد' : 'تعديل العرض'),
+        actions: [
+          if (!_loading)
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: _submit,
+            ),
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: SizedBox(
+                  width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white)),
+            )
+        ],
+      ),
+      body: _loading && _merchantId == null
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Image Picker
+                    Center(
+                      child: Column(
+                        children: [
+                          Container(
+                            height: 150,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: _imageFile != null
+                                ? Image.file(_imageFile!, fit: BoxFit.cover)
+                                : (_existingImageUrl != null
+                                    ? Image.network(_existingImageUrl!,
+                                        fit: BoxFit.cover)
+                                    : const Center(
+                                        child: Text('لم يتم اختيار صورة'))),
+                          ),
+                          TextButton.icon(
+                            icon: const Icon(Icons.image),
+                            label: const Text('اختيار صورة للعرض'),
+                            onPressed: _pickImage,
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                },
-                child: const Text('عرض معلومات المصادقة'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    // ... بقية بناء الواجهة ...
-    return Container(); // مؤقتًا حتى تكتمل الواجهة
-  }
+                    const SizedBox(height: 16),
 
-  // ...بقية الكود بنفس الطريقة...
+                    // Title
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'عنوان العرض',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.title),
+                      ),
+                      validator: (value) =>
+                          value!.isEmpty ? 'هذا الحقل مطلوب' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Description
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'وصف العرض',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.description),
+                      ),
+                      maxLines: 3,
+                      validator: (value) =>
+                          value!.isEmpty ? 'هذا الحقل مطلوب' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Prices
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _originalPriceController,
+                            decoration: const InputDecoration(
+                              labelText: 'السعر الأصلي',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.attach_money),
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: (value) =>
+                                value!.isEmpty ? 'هذا الحقل مطلوب' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _discountPercentageController,
+                            decoration: const InputDecoration(
+                              labelText: 'نسبة الخصم (%)',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.percent),
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: (value) {
+                              if (value!.isEmpty) return 'هذا الحقل مطلوب';
+                              final p = int.tryParse(value);
+                              if (p == null || p < 1 || p > 99) {
+                                return 'ادخل نسبة بين 1-99';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Dates
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Column(
+                          children: [
+                            const Text('تاريخ البدء',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextButton.icon(
+                              icon: const Icon(Icons.calendar_today),
+                              label: Text(_startDate == null
+                                  ? 'اختيار'
+                                  : DateFormat('yyyy/MM/dd')
+                                      .format(_startDate!)),
+                              onPressed: () => _pickDate(context, true),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            const Text('تاريخ الانتهاء',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextButton.icon(
+                              icon: const Icon(Icons.event_busy),
+                              label: Text(_endDate == null
+                                  ? 'اختيار'
+                                  : DateFormat('yyyy/MM/dd')
+                                      .format(_endDate!)),
+                              onPressed: () => _pickDate(context, false),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton.icon(
+                      icon: const Icon(Icons.location_on, color: Colors.deepPurple),
+                      label: Text(pickedLocation == null ? 'حدد موقع العرض على الخريطة' : 'تم اختيار الموقع'),
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PickLocationScreen(initialLocation: pickedLocation),
+                          ),
+                        );
+                        if (result != null && result is LatLng) {
+                          setState(() {
+                            pickedLocation = result;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedOfferType,
+                      items: offerTypes
+                          .map((type) => DropdownMenuItem(
+                                value: type,
+                                child: Text(type),
+                              ))
+                          .toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          selectedOfferType = val;
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'نوع العرض',
+                        prefixIcon: Icon(Icons.category),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) => value == null || value.isEmpty ? 'يرجى اختيار نوع العرض' : null,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
 }

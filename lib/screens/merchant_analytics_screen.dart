@@ -71,7 +71,10 @@ class MerchantAnalyticsScreen extends StatelessWidget {
             context,
             icon: item['icon'],
             label: item['label'],
-            onTap: () => context.go(item['path']),
+            onTap: () {
+              // استخدم GoRouter مباشرة للتنقل بين الشاشات
+              context.go(item['path']);
+            },
           );
         },
       ),

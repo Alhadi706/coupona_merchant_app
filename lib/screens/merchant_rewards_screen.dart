@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart'; // لاستخدامه في تنسيق التاريخ
 import 'package:coupona_merchant/screens/add_edit_reward_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MerchantRewardsScreen extends StatefulWidget {
   const MerchantRewardsScreen({Key? key}) : super(key: key);
@@ -31,78 +32,32 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
       return;
     }
     merchantId = user.uid;
-
+    final supabase = Supabase.instance.client;
     try {
-      // --- الخطة أ: محاولة الاستعلام المباشر الذي يعتمد على الفهرس ---
-      print("محاولة تنفيذ الاستعلام المباشر (يتطلب فهرس)...");
-      final rewardsResponse = await FirebaseFirestore.instance
-          .collection('rewards')
-          .where('merchant_id', isEqualTo: merchantId!)
-          .where('active', isEqualTo: true)
-          .orderBy('created_at', descending: true)
-          .get();
-
-      rewards = rewardsResponse.docs
-          .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
-          .toList();
-      print("نجح الاستعلام المباشر!");
-
+      final rewardsResponse = await supabase
+          .from('rewards')
+          .select()
+          .eq('merchant_id', merchantId!)
+          .eq('active', true)
+          .order('created_at', ascending: false);
+      rewards = List<Map<String, dynamic>>.from(rewardsResponse);
     } catch (e) {
-      // --- الخطة ب: إذا فشل الاستعلام الأول، نلجأ للفلترة اليدوية ---
-      print("فشل الاستعلام المباشر. اللجوء إلى الفلترة اليدوية كخطة بديلة...");
-      if (e.toString().contains("requires an index")) {
-         if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('الفهرس غير موجود. يتم جلب البيانات بطريقة بديلة...'), backgroundColor: Colors.orange),
-            );
-         }
-        // 1. جلب كل جوائز التاجر بدون فلترة الحالة أو ترتيب
-        final fallbackResponse = await FirebaseFirestore.instance
-            .collection('rewards')
-            .where('merchant_id', isEqualTo: merchantId!)
-            .get();
-        
-        // 2. الفلترة داخل التطبيق
-        var filteredRewards = fallbackResponse.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
-            .where((reward) => reward['active'] == true)
-            .toList();
-
-        // 3. الترتيب داخل التطبيق
-        filteredRewards.sort((a, b) {
-          Timestamp tsA = a['created_at'] ?? Timestamp.now();
-          Timestamp tsB = b['created_at'] ?? Timestamp.now();
-          return tsB.compareTo(tsA); // For descending order
-        });
-
-        rewards = filteredRewards;
-
-      } else {
-        // إذا كان الخطأ لسبب آخر غير الفهرس
-         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('حدث خطأ غير متوقع: $e')),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ في جلب الجوائز: $e')),
+        );
       }
     }
-
     try {
-        // جلب سجل الاستبدال (يمكن تطبيق نفس المنطق هنا إذا لزم الأمر)
-        final redeemedResponse = await FirebaseFirestore.instance
-            .collection('redeemed_rewards')
-            .where('merchant_id', isEqualTo: merchantId!)
-            .orderBy('redeemedAt', descending: true)
-            .get();
-
-        redeemed = redeemedResponse.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
-            .toList();
+      final redeemedResponse = await supabase
+          .from('redeemed_rewards')
+          .select()
+          .eq('merchant_id', merchantId!)
+          .order('redeemedAt', ascending: false);
+      redeemed = List<Map<String, dynamic>>.from(redeemedResponse);
     } catch (e) {
-        print("خطأ في جلب سجل الاستبدال: $e");
+      print("خطأ في جلب سجل الاستبدال: $e");
     }
-
-
     if (mounted) {
       setState(() => loading = false);
     }
@@ -110,8 +65,9 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
 
   Future<void> _deleteReward(String rewardId) async {
     try {
-      await FirebaseFirestore.instance.collection('rewards').doc(rewardId).delete();
-      _fetchData(); // إعادة تحميل البيانات بعد الحذف
+      final supabase = Supabase.instance.client;
+      await supabase.from('rewards').delete().eq('id', rewardId);
+      _fetchData();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

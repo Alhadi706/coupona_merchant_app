@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // إضافة استيراد go_router
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MerchantCommunityScreen extends StatefulWidget {
   const MerchantCommunityScreen({Key? key}) : super(key: key);
@@ -25,48 +27,30 @@ class _MerchantCommunityScreenState extends State<MerchantCommunityScreen> with 
   }
 
   Future<void> _fetchStoreGroup() async {
-    if (merchantId == null) return;
-    // جلب معرف القروب (إن وجد)
-    final snapshot = await FirebaseFirestore.instance
-        .collection('store_groups')
-        .where('adminId', isEqualTo: merchantId)
-        .limit(1)
-        .get();
-    if (snapshot.docs.isNotEmpty) {
-      storeGroupId = snapshot.docs.first.id;
-    } else {
-      // إذا لم يوجد قروب، أنشئ واحد تلقائياً
-      // جلب اسم المتجر من merchants
-      String? autoStoreName;
-      final merchantDoc = await FirebaseFirestore.instance
-          .collection('merchants')
-          .doc(merchantId)
-          .get();
-      if (merchantDoc.exists && merchantDoc.data() != null) {
-        autoStoreName = merchantDoc.data()!['store_name'] ?? 'قروب المحل';
-      } else {
-        autoStoreName = 'قروب المحل';
+    try {
+      if (merchantId == null) return;
+      final supabase = Supabase.instance.client;
+      // جلب معرف القروب (إن وجد)
+      final response = await supabase
+          .from('store_groups')
+          .select()
+          .eq('adminid', merchantId!) // تصحيح اسم العمود
+          .limit(1);
+      if (response.isNotEmpty) {
+        storeGroupId = response.first['id'].toString();
+        storeName = response.first['storename']?.toString(); // تصحيح اسم العمود
       }
-      final newGroup = await FirebaseFirestore.instance.collection('store_groups').add({
-        'adminId': merchantId,
-        'storeName': autoStoreName,
-        'createdAt': FieldValue.serverTimestamp(),
+      // لا داعي لإنشاء قروب هنا، فقد تم إنشاؤه عند التسجيل
+      setState(() {
+        isLoading = false;
       });
-      storeGroupId = newGroup.id;
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      debugPrint('Error fetching store group: $e');
+      // يمكنك عرض رسالة خطأ هنا إذا رغبت
     }
-    // جلب اسم المتجر من merchants
-    final merchantDoc = await FirebaseFirestore.instance
-        .collection('merchants')
-        .doc(merchantId)
-        .get();
-    if (merchantDoc.exists && merchantDoc.data() != null) {
-      storeName = merchantDoc.data()!['store_name'] ?? 'قروب المحل';
-    } else {
-      storeName = 'قروب المحل';
-    }
-    setState(() {
-      isLoading = false;
-    });
   }
 
   @override
@@ -85,6 +69,15 @@ class _MerchantCommunityScreenState extends State<MerchantCommunityScreen> with 
     return Scaffold(
       appBar: AppBar(
         title: const Text('مجتمع التاجر'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard),
+            tooltip: 'العودة للرئيسية',
+            onPressed: () {
+              context.go('/dashboard');
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -98,10 +91,8 @@ class _MerchantCommunityScreenState extends State<MerchantCommunityScreen> with 
         children: [
           // قروب التجار العام
           _PostsFeed(
-            groupCollection: 'merchant_global_group',
-            groupQuery: FirebaseFirestore.instance
-                .collection('merchant_global_group')
-                .orderBy('createdAt', descending: true),
+            groupCollection: 'merchant_groups', // This is not used for Supabase
+            groupQueryTable: 'merchant_posts', // Use a dedicated table for posts
             canPost: true,
             merchantId: merchantId!,
             groupName: 'مجتمع التجار',
@@ -115,16 +106,13 @@ class _MerchantCommunityScreenState extends State<MerchantCommunityScreen> with 
               }
               // تأكد من ظهور واجهة النشر والتعليق دائماً
               return _PostsFeed(
-                groupCollection: 'store_groups/$storeGroupId/messages',
-                groupQuery: FirebaseFirestore.instance
-                    .collection('store_groups')
-                    .doc(storeGroupId)
-                    .collection('messages')
-                    .orderBy('createdAt', descending: true),
+                groupCollection: 'store_groups/$storeGroupId/messages', // Not used for Supabase
+                groupQueryTable: 'store_group_posts', // Use a dedicated table for store posts
                 canPost: true, // دائماً true للتاجر الأدمن
                 merchantId: merchantId!,
                 groupName: storeName ?? 'قروب المحل',
                 isAdmin: true,
+                storeGroupId: storeGroupId, // Pass the group ID
               );
             },
           ),
@@ -136,19 +124,32 @@ class _MerchantCommunityScreenState extends State<MerchantCommunityScreen> with 
 
 class _PostsFeed extends StatelessWidget {
   final String groupCollection;
-  final Query groupQuery;
+  final String groupQueryTable;
   final bool canPost;
   final String merchantId;
   final String groupName;
   final bool isAdmin;
+  final String? storeGroupId; // Add storeGroupId
   const _PostsFeed({
     required this.groupCollection,
-    required this.groupQuery,
+    required this.groupQueryTable,
     required this.canPost,
     required this.merchantId,
     required this.groupName,
     required this.isAdmin,
+    this.storeGroupId, // Make it optional
   });
+
+  Future<List<Map<String, dynamic>>> _fetchPosts() async {
+    final supabase = Supabase.instance.client;
+    // إعادة بناء الاستعلام بالطريقة الصحيحة
+    var queryBuilder = supabase.from(groupQueryTable).select();
+    if (storeGroupId != null) {
+      queryBuilder = queryBuilder.eq('store_group_id', storeGroupId!);
+    }
+    final response = await queryBuilder.order('createdAt', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,22 +158,23 @@ class _PostsFeed extends StatelessWidget {
         if (canPost)
           _AddPostWidget(
             groupCollection: groupCollection,
+            groupQueryTable: groupQueryTable,
             merchantId: merchantId,
             groupName: groupName,
+            storeGroupId: storeGroupId, // Pass storeGroupId
           ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: groupQuery.snapshots(),
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _fetchPosts(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snapshot.hasError) {
-                return Center(child: Text('حدث خطأ: [38;5;9m${snapshot.error}[0m'));
+                return Center(child: Text('حدث خطأ: ${snapshot.error}'));
               }
-              final docs = snapshot.data?.docs ?? [];
+              final docs = snapshot.data ?? [];
               if (docs.isEmpty) {
-                // إظهار واجهة النشر دائماً مع رسالة واضحة
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -190,13 +192,14 @@ class _PostsFeed extends StatelessWidget {
                 itemCount: docs.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
-                  final data = docs[index].data() as Map<String, dynamic>;
-                  final postId = docs[index].id;
+                  final data = docs[index];
+                  final postId = data['id'].toString();
                   final isOwner = data['merchantId'] == merchantId;
                   return _PostCard(
                     postId: postId,
                     data: data,
                     groupCollection: groupCollection,
+                    groupQueryTable: groupQueryTable,
                     isOwner: isOwner,
                     isAdmin: isAdmin,
                     merchantId: merchantId,
@@ -215,6 +218,7 @@ class _PostCard extends StatelessWidget {
   final String postId;
   final Map<String, dynamic> data;
   final String groupCollection;
+  final String groupQueryTable;
   final bool isOwner;
   final bool isAdmin;
   final String merchantId;
@@ -222,18 +226,36 @@ class _PostCard extends StatelessWidget {
     required this.postId,
     required this.data,
     required this.groupCollection,
+    required this.groupQueryTable,
     required this.isOwner,
     required this.isAdmin,
     required this.merchantId,
   });
 
+  Future<void> _deletePost(BuildContext context) async {
+    final supabase = Supabase.instance.client;
+    await supabase.from(groupQueryTable).delete().eq('id', postId);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تم حذف المنشور بنجاح!'), backgroundColor: Colors.red),
+    );
+  }
+
+  Future<void> _toggleLike() async {
+    final supabase = Supabase.instance.client;
+    final likes = List<String>.from(data['likes'] ?? []);
+    if (likes.contains(merchantId)) {
+      likes.remove(merchantId);
+    } else {
+      likes.add(merchantId);
+    }
+    await supabase.from(groupQueryTable).update({'likes': likes}).eq('id', postId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final likes = (data['likes'] as List?) ?? [];
     final commentsCount = (data['commentsCount'] ?? 0) as int;
-    final createdAt = data['createdAt'] is Timestamp
-        ? (data['createdAt'] as Timestamp).toDate()
-        : DateTime.now();
+    final createdAt = DateTime.tryParse(data['createdAt']?.toString() ?? '') ?? DateTime.now();
     final merchantName = data['merchantName']?.toString() ?? 'تاجر';
     final avatarUrl = data['merchantAvatar'] as String?;
     return Card(
@@ -289,10 +311,7 @@ class _PostCard extends StatelessWidget {
                           ),
                         );
                         if (confirm == true) {
-                          await FirebaseFirestore.instance
-                              .collection(groupCollection)
-                              .doc(postId)
-                              .delete();
+                          await _deletePost(context);
                         }
                       },
                     )
@@ -323,20 +342,7 @@ class _PostCard extends StatelessWidget {
                         : Colors.grey,
                   ),
                   tooltip: 'إعجاب',
-                  onPressed: () async {
-                    final ref = FirebaseFirestore.instance
-                        .collection(groupCollection)
-                        .doc(postId);
-                    if (likes.contains(merchantId)) {
-                      await ref.update({
-                        'likes': FieldValue.arrayRemove([merchantId])
-                      });
-                    } else {
-                      await ref.update({
-                        'likes': FieldValue.arrayUnion([merchantId])
-                      });
-                    }
-                  },
+                  onPressed: _toggleLike,
                 ),
                 Text('${likes.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(width: 18),
@@ -359,7 +365,7 @@ class _PostCard extends StatelessWidget {
                           bottom: MediaQuery.of(context).viewInsets.bottom,
                         ),
                         child: _CommentsSheet(
-                          groupCollection: groupCollection,
+                          groupQueryTable: groupQueryTable,
                           postId: postId,
                           merchantId: merchantId,
                           isAdmin: isAdmin,
@@ -379,13 +385,17 @@ class _PostCard extends StatelessWidget {
 
 class _AddPostWidget extends StatefulWidget {
   final String groupCollection;
+  final String groupQueryTable;
   final String merchantId;
   final String groupName;
+  final String? storeGroupId; // Add storeGroupId
 
   const _AddPostWidget({
     required this.groupCollection,
+    required this.groupQueryTable,
     required this.merchantId,
     required this.groupName,
+    this.storeGroupId, // Make it optional
   });
 
   @override
@@ -404,31 +414,35 @@ class _AddPostWidgetState extends State<_AddPostWidget> {
       isLoading = true;
     });
 
+    final supabase = Supabase.instance.client;
     final merchant = FirebaseAuth.instance.currentUser;
     String merchantName = merchant?.displayName ?? '';
-    // إذا لم يوجد displayName، جلب اسم المحل من merchants
     if (merchantName.isEmpty && merchant != null) {
-      final merchantDoc = await FirebaseFirestore.instance
-          .collection('merchants')
-          .doc(merchant.uid)
-          .get();
-      if (merchantDoc.exists && merchantDoc.data() != null) {
-        merchantName = merchantDoc.data()!['store_name'] ?? '';
-      }
+      final merchantRes = await supabase
+          .from('merchants')
+          .select('store_name')
+          .eq('id', merchant.uid)
+          .single();
+      merchantName = merchantRes['store_name'] ?? '';
     }
     if (merchantName.isEmpty) merchantName = 'تاجر';
     try {
-      await FirebaseFirestore.instance.collection(widget.groupCollection).add({
+      final postData = {
         'merchantId': widget.merchantId,
         'merchantName': merchantName,
         'merchantAvatar': merchant?.photoURL,
         'title': '',
         'content': contentController.text.trim(),
-        'createdAt': FieldValue.serverTimestamp(),
+        'createdAt': DateTime.now().toIso8601String(),
         'likes': [],
         'commentsCount': 0,
-      });
+      };
 
+      if (widget.storeGroupId != null) {
+        postData['store_group_id'] = widget.storeGroupId!;
+      }
+
+      await supabase.from(widget.groupQueryTable).insert(postData);
       contentController.clear();
       FocusScope.of(context).unfocus();
       if (!mounted) return;
@@ -529,12 +543,12 @@ class _AddPostWidgetState extends State<_AddPostWidget> {
 }
 
 class _CommentsSheet extends StatefulWidget {
-  final String groupCollection;
+  final String groupQueryTable;
   final String postId;
   final String merchantId;
   final bool isAdmin;
   const _CommentsSheet({
-    required this.groupCollection,
+    required this.groupQueryTable,
     required this.postId,
     required this.merchantId,
     required this.isAdmin,
@@ -548,13 +562,69 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   final commentController = TextEditingController();
   bool isLoading = false;
 
+  Future<List<Map<String, dynamic>>> _fetchComments() async {
+    final supabase = Supabase.instance.client;
+    final response = await supabase
+        .from('${widget.groupQueryTable}_comments')
+        .select()
+        .eq('postId', widget.postId)
+        .order('createdAt', ascending: true);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<void> _addComment() async {
+    if (commentController.text.trim().isEmpty) return;
+    setState(() => isLoading = true);
+    final supabase = Supabase.instance.client;
+    final merchant = FirebaseAuth.instance.currentUser;
+    String merchantName = '';
+    if (merchant != null) {
+      merchantName = merchant.displayName ?? '';
+      if (merchantName.isEmpty) {
+        final merchantRes = await supabase
+            .from('merchants')
+            .select('store_name')
+            .eq('id', merchant.uid)
+            .single();
+        merchantName = merchantRes['store_name'] ?? '';
+      }
+    }
+    if (merchantName.isEmpty) merchantName = 'تاجر';
+    await supabase.from('${widget.groupQueryTable}_comments').insert({
+      'postId': widget.postId,
+      'merchantId': widget.merchantId,
+      'merchantName': merchantName,
+      'merchantAvatar': merchant?.photoURL,
+      'content': commentController.text.trim(),
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+    // تحديث عدد التعليقات
+    final post = await supabase
+        .from(widget.groupQueryTable)
+        .select('commentsCount')
+        .eq('id', widget.postId)
+        .single();
+    final currentCount = (post['commentsCount'] ?? 0) as int;
+    await supabase.from(widget.groupQueryTable).update({'commentsCount': currentCount + 1}).eq('id', widget.postId);
+    commentController.clear();
+    setState(() => isLoading = false);
+  }
+
+  Future<void> _deleteComment(String commentId) async {
+    final supabase = Supabase.instance.client;
+    await supabase.from('${widget.groupQueryTable}_comments').delete().eq('id', commentId);
+    // تحديث عدد التعليقات
+    final post = await supabase
+        .from(widget.groupQueryTable)
+        .select('commentsCount')
+        .eq('id', widget.postId)
+        .single();
+    final currentCount = (post['commentsCount'] ?? 1) as int;
+    await supabase.from(widget.groupQueryTable).update({'commentsCount': (currentCount - 1).clamp(0, 9999)}).eq('id', widget.postId);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final commentsRef = FirebaseFirestore.instance
-        .collection(widget.groupCollection)
-        .doc(widget.postId)
-        .collection('comments')
-        .orderBy('createdAt', descending: false);
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.65,
       child: Column(
@@ -572,13 +642,13 @@ class _CommentsSheetState extends State<_CommentsSheet> {
           const Text('التعليقات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           const Divider(),
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: commentsRef.snapshots(),
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchComments(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final docs = snapshot.data?.docs ?? [];
+                final docs = snapshot.data ?? [];
                 if (docs.isEmpty) {
                   return const Center(child: Text('لا توجد تعليقات بعد. يمكنك أن تبدأ النقاش!'));
                 }
@@ -586,7 +656,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   itemCount: docs.length,
                   separatorBuilder: (_, __) => const Divider(),
                   itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
+                    final data = docs[index];
                     final isOwner = data['merchantId'] == widget.merchantId;
                     final merchantName = data['merchantName']?.toString() ?? 'تاجر';
                     final avatarUrl = data['merchantAvatar'] as String?;
@@ -621,12 +691,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                   ),
                                 );
                                 if (confirm == true) {
-                                  await FirebaseFirestore.instance
-                                      .collection(widget.groupCollection)
-                                      .doc(widget.postId)
-                                      .collection('comments')
-                                      .doc(docs[index].id)
-                                      .delete();
+                                  await _deleteComment(data['id'].toString());
                                 }
                               },
                             )
@@ -653,46 +718,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     ? const SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 2))
                     : IconButton(
                         icon: const Icon(Icons.send, color: Colors.deepPurple),
-                        onPressed: () async {
-                          if (commentController.text.trim().isEmpty) return;
-                          setState(() => isLoading = true);
-                          final merchant = FirebaseAuth.instance.currentUser;
-                          String merchantName = '';
-                          // جلب اسم التاجر من displayName أو من merchants
-                          if (merchant != null) {
-                            merchantName = merchant.displayName ?? '';
-                            if (merchantName.isEmpty) {
-                              final merchantDoc = await FirebaseFirestore.instance
-                                  .collection('merchants')
-                                  .doc(merchant.uid)
-                                  .get();
-                              if (merchantDoc.exists && merchantDoc.data() != null) {
-                                merchantName = merchantDoc.data()!['store_name'] ?? '';
-                              }
-                            }
-                          }
-                          if (merchantName.isEmpty) merchantName = 'تاجر';
-                          await FirebaseFirestore.instance
-                              .collection(widget.groupCollection)
-                              .doc(widget.postId)
-                              .collection('comments')
-                              .add({
-                            'merchantId': widget.merchantId,
-                            'merchantName': merchantName,
-                            'merchantAvatar': merchant?.photoURL,
-                            'content': commentController.text.trim(),
-                            'createdAt': FieldValue.serverTimestamp(),
-                          });
-                          // تحديث عدد التعليقات
-                          final postRef = FirebaseFirestore.instance
-                              .collection(widget.groupCollection)
-                              .doc(widget.postId);
-                          await postRef.update({
-                            'commentsCount': FieldValue.increment(1),
-                          });
-                          commentController.clear();
-                          setState(() => isLoading = false);
-                        },
+                        onPressed: _addComment,
                       ),
               ],
             ),

@@ -44,6 +44,14 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
     }
   }
 
+  /// دالة مخصصة وواضحة للانتقال لشاشة التسجيل
+  void _goToRegisterScreen() {
+    // التأكد من أننا لا نقوم بعملية أخرى
+    if (_loading) return;
+    // استخدام GoRouter للانتقال الصريح
+    context.go('/register');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,14 +101,16 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
                 ),
                 onPressed: _loading ? null : _login,
                 child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
                     : const Text('دخول', style: TextStyle(fontSize: 18)),
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: _loading
-                    ? null
-                    : () => context.go('/register'),
+                onPressed: _goToRegisterScreen, // تم الربط بالدالة الجديدة لمنع التداخل
                 child: const Text('إنشاء حساب تاجر جديد'),
               ),
               const SizedBox(height: 16),

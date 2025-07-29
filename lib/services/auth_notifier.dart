@@ -1,30 +1,49 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// A change notifier that listens to Firebase auth state changes.
-///
-/// This notifier can be used with GoRouter's refreshListenable to react to
-/// login/logout events and automatically redirect the user.
 class AuthNotifier extends ChangeNotifier {
-  late final StreamSubscription<User?> _authStateSubscription;
-  User? _user;
+  bool _isLoggedIn = false;
+  bool get isLoggedIn => _isLoggedIn;
+  Map<String, dynamic>? _merchantData;
+  Map<String, dynamic>? get merchantData => _merchantData;
 
-  AuthNotifier() {
-    // Listen to auth state changes and notify listeners.
-    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
-      _user = user;
+  Future<void> login(String email, String password) async {
+    try {
+      // 1. تسجيل الدخول في Firebase فقط
+      final fbUser = await fb_auth.FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+      if (fbUser.user == null) {
+        throw Exception('فشل تسجيل الدخول في Firebase');
+      }
+
+      // 2. جلب بيانات التاجر من Supabase (جدول merchants) باستخدام البريد الإلكتروني
+      final response = await Supabase.instance.client
+          .from('merchants')
+          .select()
+          .eq('email', email)
+          .maybeSingle();
+
+      if (response == null) {
+        // يمكن هنا إنشاء سجل جديد في Supabase إذا رغبت بذلك
+        // await Supabase.instance.client.from('merchants').insert({ ... });
+        throw Exception('لم يتم العثور على بيانات التاجر في قاعدة البيانات');
+      }
+
+      _merchantData = response;
+      _isLoggedIn = true;
       notifyListeners();
-    });
+    } catch (e) {
+      print('حدث خطأ أثناء المصادقة أو جلب البيانات: $e');
+      rethrow;
+    }
   }
 
-  User? get user => _user;
-
-  bool get isLoggedIn => _user != null;
-
-  @override
-  void dispose() {
-    _authStateSubscription.cancel();
-    super.dispose();
+  Future<void> logout() async {
+    await fb_auth.FirebaseAuth.instance.signOut();
+    // لا حاجة لتسجيل الخروج من Supabase Auth
+    _isLoggedIn = false;
+    _merchantData = null;
+    notifyListeners();
   }
 }

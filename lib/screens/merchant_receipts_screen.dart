@@ -5,7 +5,7 @@ import 'package:hive/hive.dart';
 import 'package:coupona_merchant/widgets/cached_firestore_list.dart';
 
 class MerchantReceiptsScreen extends StatelessWidget {
-  const MerchantReceiptsScreen({super.key});
+  const MerchantReceiptsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
