@@ -199,7 +199,7 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
         'endDate': Timestamp.fromDate(_endDate!),
         'imageUrl': imageUrl,
         'merchantId': _merchantId,
-        'createdAt': FieldValue.serverTimestamp(),
+        'created_at': FieldValue.serverTimestamp(),
         'location': {'lat': pickedLocation!.latitude, 'lng': pickedLocation!.longitude},
         'type': selectedOfferType,
       };
@@ -237,9 +237,17 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('Building AddOfferScreen with back button');
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.offer == null ? 'إضافة عرض جديد' : 'تعديل العرض'),
+        title: const Text('إضافة عرض جديد'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            print('Back button pressed');
+            Navigator.pop(context);
+          },
+        ),
         actions: [
           if (!_loading)
             IconButton(

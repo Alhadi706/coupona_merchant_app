@@ -14,6 +14,22 @@ class SupabaseService {
 
   static SupabaseClient get client => Supabase.instance.client;
 
+  /// تسجيل دخول آمن إلى Supabase (يستعمل بريد/كلمة مرور مستخدم Supabase)
+  /// يستدعيه التطبيق بعد نجاح تسجيل الدخول في Firebase لضمان أن auth.uid() متاح لسياسات RLS.
+  static Future<bool> ensureLogin({required String email, required String password}) async {
+    final auth = Supabase.instance.client.auth;
+    // لو جلسة موجودة بنفس البريد نكتفي
+    if (auth.currentUser != null && auth.currentUser!.email == email) return true;
+    try {
+      await auth.signInWithPassword(email: email, password: password);
+      return true;
+    } on AuthApiException catch (_) {
+      return false; // فشل (بيانات خاطئة)
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// توليد رمز تاجر مختصر بناءً على المدينة والتخصص
   static Future<String> generateMerchantCode(String cityCode, String typeCode) async {
     final prefix = '$cityCode$typeCode';

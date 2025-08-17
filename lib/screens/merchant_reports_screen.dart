@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:coupona_merchant/widgets/home_button.dart';
 
 class MerchantReportsScreen extends StatelessWidget {
   const MerchantReportsScreen({Key? key}) : super(key: key);
@@ -17,7 +18,10 @@ class MerchantReportsScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('بلاغات الزبائن')),
+      appBar: AppBar(
+        title: const Text('بلاغات الزبائن'),
+        leading: const HomeButton(),
+      ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _fetchReports(user.uid),
         builder: (context, snapshot) {
@@ -31,13 +35,7 @@ class MerchantReportsScreen extends StatelessWidget {
           if (docs.isEmpty) {
             return const Center(child: Text('لا توجد بلاغات حتى الآن'));
           }
-          docs.sort((a, b) {
-            final aTs = DateTime.tryParse(a['createdAt']?.toString() ?? '');
-            final bTs = DateTime.tryParse(b['createdAt']?.toString() ?? '');
-            if (bTs == null) return -1;
-            if (aTs == null) return 1;
-            return bTs.compareTo(aTs);
-          });
+          // تم الاعتماد على ترتيب Supabase فقط بدون sort يدوي
           return ListView.separated(
             itemCount: docs.length,
             separatorBuilder: (_, __) => const Divider(),
@@ -47,8 +45,8 @@ class MerchantReportsScreen extends StatelessWidget {
                 leading: const Icon(Icons.report, color: Colors.red),
                 title: Text(report['title'] ?? 'بلاغ بدون عنوان'),
                 subtitle: Text(report['description'] ?? ''),
-                trailing: Text(report['createdAt'] != null
-                    ? DateTime.tryParse(report['createdAt'].toString())?.toString() ?? ''
+                trailing: Text(report['created_at'] != null
+                    ? DateTime.tryParse(report['created_at'].toString())?.toString() ?? ''
                     : ''),
               );
             },
@@ -63,7 +61,9 @@ class MerchantReportsScreen extends StatelessWidget {
     final response = await supabase
         .from('reports')
         .select()
-        .eq('merchantId', merchantId);
+        .eq('merchantid', merchantId)
+        .order('created_at', ascending: false); // تأكد من استخدام اسم العمود الصحيح
+    print('Fetched reports: $response'); // طباعة البيانات للتحقق من الترتيب
     return List<Map<String, dynamic>>.from(response);
   }
 }

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:coupona_merchant/widgets/home_button.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart'; // إزالة الاعتماد على حزمة supabase
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -278,7 +279,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (_data == null) {
       // This case should now only be hit if the user is not logged in.
       return Scaffold(
-        appBar: AppBar(title: const Text('الإعدادات')),
+        appBar: AppBar(
+          title: const Text('الإعدادات'),
+          leading: const HomeButton(),
+        ),
         body: const Center(child: Text('يرجى تسجيل الدخول لعرض الإعدادات.')),
       );
     }
@@ -288,6 +292,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         : '';
     return Scaffold(
       appBar: AppBar(
+        leading: const HomeButton(),
         title: Row(
           children: [
             const Text('لوحة تحكم تاجر'),
@@ -396,6 +401,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (val) => _data!['phone'] = val,
           ),
           const SizedBox(height: 12),
+          // --- ساعات العمل ---
+          Text('ساعات العمل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 8),
+          ...List.generate(7, (i) {
+            final days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+            final workHours = (_data!['work_hours'] ?? {})[days[i]] ?? {'from': '', 'to': ''};
+            return Row(
+              children: [
+                SizedBox(width: 70, child: Text(days[i])),
+                Expanded(
+                  child: TextFormField(
+                    initialValue: workHours['from'],
+                    decoration: const InputDecoration(labelText: 'من'),
+                    onChanged: (val) {
+                      final wh = Map<String, dynamic>.from(_data!['work_hours'] ?? {});
+                      wh[days[i]] = {'from': val, 'to': workHours['to']};
+                      _data!['work_hours'] = wh;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    initialValue: workHours['to'],
+                    decoration: const InputDecoration(labelText: 'إلى'),
+                    onChanged: (val) {
+                      final wh = Map<String, dynamic>.from(_data!['work_hours'] ?? {});
+                      wh[days[i]] = {'from': workHours['from'], 'to': val};
+                      _data!['work_hours'] = wh;
+                    },
+                  ),
+                ),
+              ],
+            );
+          }),
+          const SizedBox(height: 12),
           // روابط الاتصال
           TextFormField(
             initialValue: _data!['whatsapp'] ?? '',
@@ -461,7 +502,116 @@ class _SettingsScreenState extends State<SettingsScreen> {
             label: const Text('حذف الحساب', style: TextStyle(color: Colors.red)),
           ),
           const SizedBox(height: 24),
-          // تم حذف أيقونة معلومات المتجر نهائياً
+          // --- إدارة الأقسام/الخدمات ---
+          const SizedBox(height: 24),
+          Text('أقسام/خدمات المحل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 8),
+          ...List.generate((_data!['services'] ?? []).length, (i) {
+            final service = (_data!['services'] ?? [])[i];
+            return Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    initialValue: service,
+                    decoration: InputDecoration(labelText: 'خدمة/قسم رقم ${i + 1}'),
+                    onChanged: (val) {
+                      final services = List<String>.from(_data!['services'] ?? []);
+                      services[i] = val;
+                      _data!['services'] = services;
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    final services = List<String>.from(_data!['services'] ?? []);
+                    services.removeAt(i);
+                    setState(() => _data!['services'] = services);
+                  },
+                ),
+              ],
+            );
+          }),
+          TextButton.icon(
+            onPressed: () {
+              final services = List<String>.from(_data!['services'] ?? []);
+              services.add('');
+              setState(() => _data!['services'] = services);
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('إضافة خدمة/قسم'),
+          ),
+          const SizedBox(height: 12),
+          // --- تفعيل/تعطيل الإعلانات ---
+          SwitchListTile(
+            title: const Text('تفعيل الإعلانات داخل التطبيق'),
+            value: _data!['ads_enabled'] ?? true,
+            onChanged: (val) {
+              setState(() => _data!['ads_enabled'] = val);
+            },
+            activeColor: Colors.deepPurple,
+          ),
+          const SizedBox(height: 12),
+          // --- التحكم في ظهور المحل في المتجر ---
+          SwitchListTile(
+            title: const Text('إظهار المحل في المتجر للعملاء'),
+            value: _data!['visible_in_store'] ?? true,
+            onChanged: (val) {
+              setState(() => _data!['visible_in_store'] = val);
+            },
+            activeColor: Colors.deepPurple,
+          ),
+          const SizedBox(height: 12),
+          // --- تعطيل التواصل مع المحل ---
+          SwitchListTile(
+            title: const Text('تعطيل التواصل مع المحل (واتساب/فيسبوك/إنستغرام)'),
+            value: _data!['disable_contact'] ?? false,
+            onChanged: (val) {
+              setState(() => _data!['disable_contact'] = val);
+            },
+            activeColor: Colors.deepPurple,
+          ),
+          const SizedBox(height: 12),
+          // --- ربط المحل بحسابات الوصول الاجتماعي ---
+          const SizedBox(height: 24),
+          Text('ربط المحل بحسابات الوصول الاجتماعي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('سيتم دعم ربط Google قريباً.')),
+                  );
+                },
+                icon: const Icon(Icons.account_circle, color: Colors.red),
+                label: const Text('Google'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('سيتم دعم ربط Facebook قريباً.')),
+                  );
+                },
+                icon: const Icon(Icons.facebook, color: Colors.blue),
+                label: const Text('Facebook'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('سيتم دعم ربط Instagram قريباً.')),
+                  );
+                },
+                icon: const Icon(Icons.camera_alt, color: Colors.purple),
+                label: const Text('Instagram'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
         ],
       ),
     );

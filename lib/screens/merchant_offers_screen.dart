@@ -5,6 +5,7 @@ import 'package:coupona_merchant/screens/add_offer_screen.dart';
 import 'package:hive/hive.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:coupona_merchant/widgets/home_button.dart';
 
 import '../widgets/address_from_latlng.dart';
 
@@ -37,7 +38,7 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
         .from('offers')
         .stream(primaryKey: ['id'])
         .eq('merchant_id', _merchantId!)
-        .order('createdAt', ascending: false)
+        .order('created_at', ascending: false)
         .map((offers) => List<Map<String, dynamic>>.from(offers));
   }
 
@@ -95,6 +96,7 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('إدارة العروض'),
+        leading: const HomeButton(),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_circle_outline),

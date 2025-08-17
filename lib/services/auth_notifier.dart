@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'supabase_service.dart';
 
 class AuthNotifier extends ChangeNotifier {
   bool _isLoggedIn = false;
@@ -15,6 +16,12 @@ class AuthNotifier extends ChangeNotifier {
           .signInWithEmailAndPassword(email: email, password: password);
       if (fbUser.user == null) {
         throw Exception('فشل تسجيل الدخول في Firebase');
+      }
+
+      // 1.1 تسجيل الدخول في Supabase لضمان auth.uid() لسياسات RLS
+      final supaOk = await SupabaseService.ensureLogin(email: email, password: password);
+      if (!supaOk) {
+        throw Exception('فشل تسجيل الدخول في Supabase');
       }
 
       // 2. جلب بيانات التاجر من Supabase (جدول merchants) باستخدام البريد الإلكتروني
@@ -41,7 +48,7 @@ class AuthNotifier extends ChangeNotifier {
 
   Future<void> logout() async {
     await fb_auth.FirebaseAuth.instance.signOut();
-    // لا حاجة لتسجيل الخروج من Supabase Auth
+  await Supabase.instance.client.auth.signOut();
     _isLoggedIn = false;
     _merchantData = null;
     notifyListeners();

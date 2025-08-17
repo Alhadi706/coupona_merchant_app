@@ -14,6 +14,8 @@ import 'screens/merchant_customers_screen.dart';
 import 'screens/merchant_reports_screen.dart';
 import 'screens/merchant_rewards_screen.dart';
 import 'screens/store_community_screen.dart';
+import 'screens/merchant_community_screen.dart';
+import 'screens/merchant_stats_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'services/supabase_service.dart';
 import 'screens/settings_screen.dart'; // استيراد شاشة الإعدادات
@@ -28,6 +30,12 @@ void main() async {
 
   // تهيئة Supabase عبر الخدمة (مثل تطبيق الزبون)
   await SupabaseService.init();
+
+  // طباعة session والمستخدم الحالي من Supabase للتأكد من الربط
+  final supabaseSession = Supabase.instance.client.auth.currentSession;
+  final supabaseUser = Supabase.instance.client.auth.currentUser;
+  print('Supabase session: ' + (supabaseSession != null ? supabaseSession.toJson().toString() : 'null'));
+  print('Supabase user: ' + (supabaseUser != null ? supabaseUser.id : 'null'));
 
   // إزالة المستمع القديم لتجنب التعارض
   // fb_auth.FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -82,38 +90,44 @@ final _router = GoRouter(
       builder: (context, state) => const MerchantRegisterScreen(),
     ),
     GoRoute(
-      path: '/analytics',
+      path: '/dashboard/analytics',
       builder: (context, state) => const MerchantAnalyticsScreen(),
     ),
     GoRoute(
-      path: '/offers',
+      path: '/dashboard/offers',
       builder: (context, state) => const MerchantOffersScreen(),
     ),
     GoRoute(
-      path: '/customers',
+      path: '/dashboard/customers',
       builder: (context, state) => const MerchantCustomersScreen(),
     ),
     GoRoute(
-      path: '/products',
+      path: '/dashboard/products',
       builder: (context, state) => const MerchantProductsScreen(),
     ),
     GoRoute(
-      path: '/reports',
-      builder: (context, state) => const MerchantReportsScreen(),
+      path: '/dashboard/reports',
+  builder: (context, state) => const MerchantStatsScreen(),
     ),
     GoRoute(
-      path: '/rewards',
+      path: '/dashboard/rewards',
       builder: (context, state) => const MerchantRewardsScreen(),
     ),
+    // شاشة المجتمع الرئيسية (مجتمع التجار + قروب المحل)
     GoRoute(
-      path: '/community/:storeId',
+      path: '/dashboard/community',
+      builder: (context, state) => const MerchantCommunityScreen(),
+    ),
+    // شاشة قروب المحل (حسب storeId)
+    GoRoute(
+      path: '/dashboard/community/:storeId',
       builder: (context, state) {
         final storeId = state.pathParameters['storeId']!;
         return StoreCommunityScreen(storeId: storeId);
       },
     ),
     GoRoute(
-      path: '/settings',
+      path: '/dashboard/settings',
       builder: (context, state) => const SettingsScreen(),
     ),
   ],

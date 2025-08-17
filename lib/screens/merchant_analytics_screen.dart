@@ -40,8 +40,8 @@ class MerchantAnalyticsScreen extends StatelessWidget {
       },
       {
         'icon': Icons.bar_chart,
-        'label': 'التقارير والتحليلات',
-        'path': '/dashboard/reports'
+        'label': 'التحليلات والإحصائيات',
+        'path': '/dashboard/reports',
       },
       {
         'icon': Icons.forum,

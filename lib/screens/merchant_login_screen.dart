@@ -32,7 +32,10 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
         email: email,
         password: password,
       );
-      // The auth state listener in main.dart will handle the redirect.
+      // توجيه المستخدم مباشرة بعد نجاح تسجيل الدخول
+      if (mounted) {
+        context.go('/dashboard');
+      }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('فشل تسجيل الدخول: ${e.message}')),

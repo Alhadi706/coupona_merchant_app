@@ -89,15 +89,41 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
 
     try {
       final fbUserCred = await fb_auth.FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
-      final user = fbUserCred.user;
+      // إنشاء مستخدم في Supabase بنفس البريد وكلمة المرور إن لم يوجد
+      try {
+        await SupabaseService.client.auth.signUp(email: email, password: password);
+      } catch (e) {
+        debugPrint('Supabase signUp (قد يكون موجود مسبقاً): $e');
+      }
+      // تسجيل الدخول Supabase لضمان توفر auth.uid()
+      try {
+        await SupabaseService.ensureLogin(email: email, password: password);
+      } catch (e) {
+        debugPrint('Supabase signIn failed: $e');
+      }
+      // جلب المستخدم الحالي بشكل موثوق بعد الإنشاء
+      final user = await fb_auth.FirebaseAuth.instance.authStateChanges().first;
+      debugPrint('Firebase user after registration (authStateChanges): ${user?.uid}');
       if (user != null) {
+        // ملاحظة: لا يمكن مزامنة جلسة Firebase مع Supabase مباشرة في Flutter، سيتم الاعتماد فقط على Firebase Auth هنا.
         // توليد رمز مختصر للتاجر بالإنجليزي
         String cityCode = 'TRP'; // رمز ثابت أو استنتاج من المدينة لاحقاً
         String typeCode = activityTypeCodes[activityType] ?? 'OT';
         final merchantCode = await SupabaseService.generateMerchantCode(cityCode, typeCode);
+        // تحقق من أن user.uid ليس null
+        debugPrint('Firebase user.uid: \\${user.uid}');
+        if (user.uid == null || user.uid.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تعذر الحصول على معرف المستخدم (user.uid)!')),
+          );
+          setState(() => _loading = false);
+          return;
+        }
         // إضافة بيانات التاجر في جدول merchants في Supabase مباشرة
         try {
-          await SupabaseService.client.from('merchants').insert({
+          final supaUid = SupabaseService.client.auth.currentUser?.id; // قد يكون UUID مختلف عن Firebase UID
+          final merchantData = {
+            'id': supaUid ?? user.uid,
             'store_name': storeName,
             'location': '${pickedLocation!.latitude},${pickedLocation!.longitude}',
             'email': email,
@@ -106,27 +132,13 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
             'role': 'merchant',
             'activity_type': activityType,
             'created_at': DateTime.now().toIso8601String(),
-            'user_id': user.uid,
+            'user_id': supaUid ?? user.uid,
             'merchant_code': merchantCode,
-          });
-          // إنشاء قروب محل تلقائيًا في Supabase
-          try {
-            // تحقق من وجود قروب محل مسبقاً قبل الإنشاء
-            final existingGroup = await SupabaseService.client
-                .from('store_groups')
-                .select()
-                .eq('adminid', user.uid)
-                .maybeSingle();
-            if (existingGroup == null) {
-              await SupabaseService.client.from('store_groups').insert({
-                'adminid': user.uid,
-                'storename': storeName,
-                'createdat': DateTime.now().toIso8601String(),
-              });
-            }
-          } catch (e) {
-            debugPrint('خطأ أثناء إنشاء قروب المحل في Supabase: $e');
-          }
+            // تمت إزالة firebase_uid لأن العمود غير موجود في جدول merchants في Supabase
+          };
+          debugPrint('merchantData to insert: $merchantData');
+          await SupabaseService.client.from('merchants').insert([merchantData]);
+          // ملاحظة: إنشاء قروب المحل أصبح يدويًا من شاشة المجتمع
         } catch (e) {
           debugPrint('خطأ أثناء إضافة بيانات التاجر في Supabase: $e');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -143,7 +155,7 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
           'location': {'lat': pickedLocation!.latitude, 'lng': pickedLocation!.longitude},
           'logo_url': 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
           'role': 'merchant',
-          'createdAt': DateTime.now().toIso8601String(),
+          'created_at': DateTime.now().toIso8601String(),
         });
         // يمكن إبقاء التخزين في merchants إذا كان هناك منطق خاص للتجار
         await FirebaseFirestore.instance.collection('merchants').doc(user.uid).set({
@@ -155,7 +167,7 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
           'location': {'lat': pickedLocation!.latitude, 'lng': pickedLocation!.longitude},
           'logo_url': 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
           'role': 'merchant',
-          'createdAt': DateTime.now().toIso8601String(),
+          'created_at': DateTime.now().toIso8601String(),
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

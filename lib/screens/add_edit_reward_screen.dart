@@ -110,6 +110,12 @@ class _RewardManagementScreenState extends State<RewardManagementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('إدارة الجوائز'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

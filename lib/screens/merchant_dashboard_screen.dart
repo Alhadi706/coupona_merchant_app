@@ -92,7 +92,9 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
 
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
-    // The auth listener in main.dart will handle navigation
+    if (mounted) {
+      context.go('/');
+    }
   }
 
   @override

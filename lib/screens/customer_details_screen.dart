@@ -63,7 +63,7 @@ class _CustomerOrders extends StatelessWidget {
       stream: FirebaseFirestore.instance
           .collection('orders')
           .where('customerId', isEqualTo: customerId)
-          .orderBy('createdAt', descending: true)
+          .orderBy('created_at', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -79,7 +79,7 @@ class _CustomerOrders extends StatelessWidget {
             return ListTile(
               leading: const Icon(Icons.shopping_cart, color: Colors.green),
               title: Text('طلب رقم: ${doc.id}'),
-              subtitle: Text('التاريخ: ${(data['createdAt'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-'}\nالمبلغ: ${data['total'] ?? '-'}'),
+              subtitle: Text('التاريخ: ${(data['created_at'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-'}\nالمبلغ: ${data['total'] ?? '-'}'),
             );
           }).toList(),
         );

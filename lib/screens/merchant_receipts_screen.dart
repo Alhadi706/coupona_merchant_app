@@ -19,7 +19,7 @@ class MerchantReceiptsScreen extends StatelessWidget {
         query: FirebaseFirestore.instance
             .collection('receipts')
             .where('merchantId', isEqualTo: merchantId)
-            .orderBy('createdAt', descending: true),
+            .orderBy('created_at', descending: true), // تعديل اسم العمود
         itemBuilder: (context, receipt) {
           final status = receipt['status'] ?? 'قيد المراجعة';
           final products = List<Map<String, dynamic>>.from(receipt['products'] ?? []);
@@ -49,8 +49,8 @@ class MerchantReceiptsScreen extends StatelessWidget {
                             : Colors.orange.shade50,
                   ),
                   const SizedBox(width: 8),
-                  Text(receipt['createdAt'] != null
-                      ? (receipt['createdAt'] as Timestamp).toDate().toString().substring(0, 16)
+                  Text(receipt['created_at'] != null // تعديل اسم العمود
+                      ? (receipt['created_at'] as Timestamp).toDate().toString().substring(0, 16) // تعديل اسم العمود
                       : ''),
                 ],
               ),

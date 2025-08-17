@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // إضافة استيراد go_router
+import 'package:coupona_merchant/widgets/home_button.dart';
+// import 'package:go_router/go_router.dart'; // لم يعد مستخدماً هنا
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MerchantCommunityScreen extends StatefulWidget {
@@ -11,161 +12,209 @@ class MerchantCommunityScreen extends StatefulWidget {
   State<MerchantCommunityScreen> createState() => _MerchantCommunityScreenState();
 }
 
-class _MerchantCommunityScreenState extends State<MerchantCommunityScreen> with SingleTickerProviderStateMixin {
+class _MerchantCommunityScreenState extends State<MerchantCommunityScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String? merchantId;
+  String? userId;
+  bool isLoading = false;
   String? storeGroupId;
   String? storeName;
-  bool isLoading = true;
+  String? activityType;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    merchantId = FirebaseAuth.instance.currentUser?.uid;
-    _fetchStoreGroup();
+    _loadMerchantData();
   }
 
-  Future<void> _fetchStoreGroup() async {
-    try {
-      if (merchantId == null) return;
-      final supabase = Supabase.instance.client;
-      // جلب معرف القروب (إن وجد)
-      final response = await supabase
-          .from('store_groups')
-          .select()
-          .eq('adminid', merchantId!) // تصحيح اسم العمود
-          .limit(1);
-      if (response.isNotEmpty) {
-        storeGroupId = response.first['id'].toString();
-        storeName = response.first['storename']?.toString(); // تصحيح اسم العمود
+  Future<void> _loadMerchantData() async {
+    setState(() => isLoading = true);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      userId = user.uid;
+
+      final merchantDoc = await FirebaseFirestore.instance
+          .collection('merchants')
+          .doc(user.uid)
+          .get();
+
+      if (merchantDoc.exists) {
+        setState(() {
+          final data = merchantDoc.data() as Map<String, dynamic>?;
+          storeName = data != null && data.containsKey('store_name') ? data['store_name'] : null;
+          activityType = data != null && data.containsKey('activity_type') ? data['activity_type'] : null;
+          storeGroupId = data != null && data.containsKey('store_group_id') ? data['store_group_id'] : null;
+        });
       }
-      // لا داعي لإنشاء قروب هنا، فقد تم إنشاؤه عند التسجيل
-      setState(() {
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      debugPrint('Error fetching store group: $e');
-      // يمكنك عرض رسالة خطأ هنا إذا رغبت
     }
+    setState(() => isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (merchantId == null) {
+    if (userId == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('مجتمع التاجر')),
+        appBar: AppBar(
+          title: const Text('مجتمع التاجر'),
+          leading: const HomeButton(),
+        ),
         body: const Center(child: Text('يجب تسجيل الدخول لعرض المجتمع')),
       );
     }
+
     if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('مجتمع التاجر'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.dashboard),
-            tooltip: 'العودة للرئيسية',
-            onPressed: () {
-              context.go('/dashboard');
-            },
-          ),
-        ],
+        leading: const HomeButton(),
         bottom: TabBar(
           controller: _tabController,
-          tabs: [
-            const Tab(icon: Icon(Icons.public), text: 'مجتمع التجار'),
-            Tab(icon: const Icon(Icons.store), text: storeName ?? 'قروب المحل'),
+          tabs: const [
+            Tab(text: 'مجتمع التجار'),
+            Tab(text: 'قروب المحل'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          // قروب التجار العام
           _PostsFeed(
-            groupCollection: 'merchant_groups', // This is not used for Supabase
-            groupQueryTable: 'merchant_posts', // Use a dedicated table for posts
+            groupCollection: 'merchant_posts',
+            groupQueryTable: 'merchant_posts',
             canPost: true,
-            merchantId: merchantId!,
+            userId: userId!,
             groupName: 'مجتمع التجار',
             isAdmin: false,
+            storeGroupId: null,
+            activityType: activityType,
           ),
-          // قروب المحل الخاص (يظهر فقط إذا كان التاجر أدمن لمحل)
-          Builder(
-            builder: (context) {
-              if (storeGroupId == null) {
-                return const Center(child: Text('لا يوجد قروب محل خاص بك كأدمن. تواصل مع الدعم لإنشاء قروب لمتجرك.'));
-              }
-              // تأكد من ظهور واجهة النشر والتعليق دائماً
-              return _PostsFeed(
-                groupCollection: 'store_groups/$storeGroupId/messages', // Not used for Supabase
-                groupQueryTable: 'store_group_posts', // Use a dedicated table for store posts
-                canPost: true, // دائماً true للتاجر الأدمن
-                merchantId: merchantId!,
-                groupName: storeName ?? 'قروب المحل',
-                isAdmin: true,
-                storeGroupId: storeGroupId, // Pass the group ID
-              );
-            },
-          ),
+          _PostsFeed(
+            groupCollection: 'store_group_posts',
+            groupQueryTable: 'store_group_posts',
+            canPost: storeGroupId != null,
+            userId: userId!,
+            groupName: storeName ?? '',
+            isAdmin: true,
+            storeGroupId: storeGroupId,
+            activityType: null,
+          )
         ],
       ),
     );
   }
 }
 
-class _PostsFeed extends StatelessWidget {
+class _PostsFeed extends StatefulWidget {
   final String groupCollection;
   final String groupQueryTable;
   final bool canPost;
-  final String merchantId;
+  final String userId;
   final String groupName;
   final bool isAdmin;
-  final String? storeGroupId; // Add storeGroupId
+  final String? storeGroupId;
+  final String? activityType;
+
   const _PostsFeed({
     required this.groupCollection,
     required this.groupQueryTable,
     required this.canPost,
-    required this.merchantId,
+    required this.userId,
     required this.groupName,
     required this.isAdmin,
-    this.storeGroupId, // Make it optional
-  });
+    this.storeGroupId,
+    this.activityType,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_PostsFeed> createState() => _PostsFeedState();
+}
+
+class _PostsFeedState extends State<_PostsFeed> {
+  Future<List<Map<String, dynamic>>>? _postsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshPosts();
+  }
+
+  void _refreshPosts() {
+    setState(() {
+      _postsFuture = _fetchPosts();
+    });
+  }
 
   Future<List<Map<String, dynamic>>> _fetchPosts() async {
     final supabase = Supabase.instance.client;
-    // إعادة بناء الاستعلام بالطريقة الصحيحة
-    var queryBuilder = supabase.from(groupQueryTable).select();
-    if (storeGroupId != null) {
-      queryBuilder = queryBuilder.eq('store_group_id', storeGroupId!);
+  final query = supabase.from(widget.groupQueryTable).select();
+
+    if (widget.storeGroupId != null) {
+      query.eq('store_group_id', widget.storeGroupId!);
     }
-    final response = await queryBuilder.order('createdAt', ascending: false);
-    return List<Map<String, dynamic>>.from(response);
+
+    if (widget.activityType != null) {
+      query.eq('activity_type', widget.activityType!);
+    }
+
+    query.order('created_at', ascending: false); // الترتيب تنازلي
+
+    final response = await query;
+    final posts = List<Map<String, dynamic>>.from(response);
+
+    DateTime? _parse(dynamic v) {
+      if (v == null) return null;
+      final s = v.toString().trim();
+      // أنماط محتملة: 2025-08-17T12:30:00.123Z أو 2025-08-17 12:30:00+00 أو تاريخ فقط
+      DateTime? dt = DateTime.tryParse(s);
+      if (dt != null) return dt;
+      // لو تاريخ فقط
+      final dateOnlyReg = RegExp(r'^\\d{4}-\\d{2}-\\d{2}$');
+      if (dateOnlyReg.hasMatch(s)) {
+        try { return DateTime.parse('${s}T00:00:00Z'); } catch (_) {}
+      }
+      return null;
+    }
+
+    posts.sort((a, b) {
+      final da = _parse(a['created_at']);
+      final db = _parse(b['created_at']);
+      if (da == null && db == null) return 0;
+      if (da == null) return 1; // nulls للأسفل
+      if (db == null) return -1;
+      return db.compareTo(da); // تنازلي
+    });
+
+  // ملاحظة: أزلنا الانعكاس الاحتياطي لأنّه كان يقلب الترتيب الصحيح في بعض الحالات.
+  // لو احتجت تحقق يمكنك طباعة أول وآخر تاريخ للتأكد:
+  // final first = _parse(posts.first['created_at']);
+  // final last = _parse(posts.last['created_at']);
+  // print('DEBUG order first=$first last=$last (يجب أن يكون first >= last)');
+
+    return posts;
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (canPost)
+        if (widget.canPost)
           _AddPostWidget(
-            groupCollection: groupCollection,
-            groupQueryTable: groupQueryTable,
-            merchantId: merchantId,
-            groupName: groupName,
-            storeGroupId: storeGroupId, // Pass storeGroupId
+            groupCollection: widget.groupCollection,
+            groupQueryTable: widget.groupQueryTable,
+            userId: widget.userId,
+            groupName: widget.groupName,
+            storeGroupId: widget.storeGroupId,
+            activityType: widget.activityType,
+            onPostAdded: _refreshPosts,
           ),
         Expanded(
           child: FutureBuilder<List<Map<String, dynamic>>>(
-            future: _fetchPosts(),
+            future: _postsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -179,10 +228,11 @@ class _PostsFeed extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text('لا توجد منشورات بعد. كن أول من ينشر!'),
-                    if (canPost)
+                    if (widget.canPost)
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),
-                        child: Text('يمكنك إضافة منشور جديد من الأعلى', style: TextStyle(color: Colors.deepPurple)),
+                        child: Text('يمكنك إضافة منشور جديد من الأعلى',
+                            style: TextStyle(color: Colors.deepPurple)),
                       ),
                   ],
                 );
@@ -194,15 +244,17 @@ class _PostsFeed extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final data = docs[index];
                   final postId = data['id'].toString();
-                  final isOwner = data['merchantId'] == merchantId;
+                  final supaUserId = Supabase.instance.client.auth.currentUser?.id;
+                  final isOwner = data['user_id'] == supaUserId || data['user_id'] == widget.userId;
                   return _PostCard(
                     postId: postId,
                     data: data,
-                    groupCollection: groupCollection,
-                    groupQueryTable: groupQueryTable,
+                    groupCollection: widget.groupCollection,
+                    groupQueryTable: widget.groupQueryTable,
                     isOwner: isOwner,
-                    isAdmin: isAdmin,
-                    merchantId: merchantId,
+                    isAdmin: widget.isAdmin,
+                    userId: widget.userId,
+                    onPostDeleted: _refreshPosts,
                   );
                 },
               );
@@ -214,6 +266,8 @@ class _PostsFeed extends StatelessWidget {
   }
 }
 
+// (تم حذف النسخة القديمة لـ _AddPostWidget واستبدالها بنسخة Stateful في الأسفل)
+
 class _PostCard extends StatelessWidget {
   final String postId;
   final Map<String, dynamic> data;
@@ -221,7 +275,9 @@ class _PostCard extends StatelessWidget {
   final String groupQueryTable;
   final bool isOwner;
   final bool isAdmin;
-  final String merchantId;
+  final String userId;
+  final VoidCallback onPostDeleted;
+
   const _PostCard({
     required this.postId,
     required this.data,
@@ -229,155 +285,90 @@ class _PostCard extends StatelessWidget {
     required this.groupQueryTable,
     required this.isOwner,
     required this.isAdmin,
-    required this.merchantId,
-  });
-
-  Future<void> _deletePost(BuildContext context) async {
-    final supabase = Supabase.instance.client;
-    await supabase.from(groupQueryTable).delete().eq('id', postId);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم حذف المنشور بنجاح!'), backgroundColor: Colors.red),
-    );
-  }
-
-  Future<void> _toggleLike() async {
-    final supabase = Supabase.instance.client;
-    final likes = List<String>.from(data['likes'] ?? []);
-    if (likes.contains(merchantId)) {
-      likes.remove(merchantId);
-    } else {
-      likes.add(merchantId);
-    }
-    await supabase.from(groupQueryTable).update({'likes': likes}).eq('id', postId);
-  }
+    required this.userId,
+    required this.onPostDeleted,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final likes = (data['likes'] as List?) ?? [];
-    final commentsCount = (data['commentsCount'] ?? 0) as int;
-    final createdAt = DateTime.tryParse(data['createdAt']?.toString() ?? '') ?? DateTime.now();
-    final merchantName = data['merchantName']?.toString() ?? 'تاجر';
-    final avatarUrl = data['merchantAvatar'] as String?;
     return Card(
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(14.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.deepPurple.shade100,
-                  backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
-                  child: (avatarUrl == null || avatarUrl.isEmpty) ? Text(merchantName.isNotEmpty ? merchantName.characters.first : 'ت', style: const TextStyle(color: Colors.deepPurple)) : null,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    merchantName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-                Text(
-                  '${createdAt.year}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.day.toString().padLeft(2, '0')}'
-                  '\n${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                  textAlign: TextAlign.right,
-                ),
-                (isOwner || isAdmin)
-                  ? IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      tooltip: 'حذف المنشور',
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('تأكيد الحذف'),
-                            content: const Text('هل أنت متأكد من حذف هذا المنشور؟'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('إلغاء'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('حذف'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true) {
-                          await _deletePost(context);
-                        }
-                      },
-                    )
-                  : SizedBox.shrink(),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if ((data['title'] ?? '').toString().isNotEmpty)
-              Text(
-                data['title'] ?? '',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            if ((data['content'] ?? '').toString().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0),
-                child: Text(data['content'] ?? '', style: const TextStyle(fontSize: 15)),
-              ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    likes.contains(merchantId)
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                    color: likes.contains(merchantId)
-                        ? Colors.red
-                        : Colors.grey,
-                  ),
-                  tooltip: 'إعجاب',
-                  onPressed: _toggleLike,
-                ),
-                Text('${likes.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(width: 18),
-                TextButton.icon(
-                  icon: const Icon(Icons.comment, color: Colors.deepPurple),
-                  label: Text('$commentsCount تعليق', style: const TextStyle(color: Colors.deepPurple)),
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.deepPurple.shade50,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  onPressed: () async {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                      ),
-                      builder: (context) => Padding(
-                        padding: EdgeInsets.only(
-                          bottom: MediaQuery.of(context).viewInsets.bottom,
-                        ),
-                        child: _CommentsSheet(
-                          groupQueryTable: groupQueryTable,
-                          postId: postId,
-                          merchantId: merchantId,
-                          isAdmin: isAdmin,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
+      margin: const EdgeInsets.all(8.0),
+      child: ListTile(
+        title: Text(
+          (data['title'] ?? data['content'] ?? 'منشور') as String,
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
+        subtitle: Builder(
+          builder: (context) {
+            final createdAt = data['created_at'];
+            String ts = '';
+            if (createdAt is String) ts = createdAt.split('T').first;
+            return Text([
+              if (data['content'] != null && data['title'] != data['content']) data['content'],
+              if (ts.isNotEmpty) '📅 $ts'
+            ].whereType<String>().join('\n'));
+          },
+        ),
+        trailing: (isOwner || isAdmin)
+            ? IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () async {
+                  final supabase = Supabase.instance.client;
+                  try {
+                    if (!isOwner && !isAdmin) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('لا تملك صلاحية الحذف (ليست منشورك)')),
+                        );
+                      }
+                      return;
+                    }
+                    final idValue = data['id'];
+                    final existing = await supabase
+                        .from(groupQueryTable)
+                        .select('id,user_id')
+                        .eq('id', idValue)
+                        .maybeSingle();
+                    if (existing == null) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('المنشور غير موجود (ربما حُذف)')),
+                        );
+                      }
+                      onPostDeleted();
+                      return;
+                    }
+                    final deleted = await supabase
+                        .from(groupQueryTable)
+                        .delete()
+                        .eq('id', idValue)
+                        // أزلنا تقييد user_id لتسهيل الحذف بعد تعديل السياسة (مؤقتاً)
+                        .select();
+                    if (deleted is List && deleted.isNotEmpty) {
+                      onPostDeleted();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('تم حذف المنشور')),
+                        );
+                      }
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('تعذر الحذف: تحقق من سياسات RLS')),
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('فشل حذف المنشور: $e')),
+                      );
+                    }
+                  }
+                },
+              )
+            : null,
       ),
     );
   }
@@ -386,377 +377,124 @@ class _PostCard extends StatelessWidget {
 class _AddPostWidget extends StatefulWidget {
   final String groupCollection;
   final String groupQueryTable;
-  final String merchantId;
+  final String userId;
   final String groupName;
-  final String? storeGroupId; // Add storeGroupId
+  final String? storeGroupId;
+  final String? activityType; // لتمرير نوع النشاط حتى يتم إدراجه في الصف
+  final VoidCallback? onPostAdded;
 
   const _AddPostWidget({
     required this.groupCollection,
     required this.groupQueryTable,
-    required this.merchantId,
+    required this.userId,
     required this.groupName,
-    this.storeGroupId, // Make it optional
-  });
+    this.storeGroupId,
+  this.activityType,
+    this.onPostAdded,
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<_AddPostWidget> createState() => _AddPostWidgetState();
 }
 
 class _AddPostWidgetState extends State<_AddPostWidget> {
-  final contentController = TextEditingController();
-  bool isLoading = false;
+  final _controller = TextEditingController();
+  bool _submitting = false;
 
-  Future<void> _addPost() async {
-    if (contentController.text.trim().isEmpty) {
+  Future<void> _submit() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('الرجاء كتابة محتوى المنشور')),
+      );
       return;
     }
-    setState(() {
-      isLoading = true;
-    });
-
-    final supabase = Supabase.instance.client;
-    final merchant = FirebaseAuth.instance.currentUser;
-    String merchantName = merchant?.displayName ?? '';
-    if (merchantName.isEmpty && merchant != null) {
-      final merchantRes = await supabase
-          .from('merchants')
-          .select('store_name')
-          .eq('id', merchant.uid)
-          .single();
-      merchantName = merchantRes['store_name'] ?? '';
+    final supaUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (supaUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يجب تسجيل الدخول (Supabase) قبل النشر.')),
+      );
+      return;
     }
-    if (merchantName.isEmpty) merchantName = 'تاجر';
-    try {
-      final postData = {
-        'merchantId': widget.merchantId,
-        'merchantName': merchantName,
-        'merchantAvatar': merchant?.photoURL,
-        'title': '',
-        'content': contentController.text.trim(),
-        'createdAt': DateTime.now().toIso8601String(),
-        'likes': [],
-        'commentsCount': 0,
-      };
-
-      if (widget.storeGroupId != null) {
-        postData['store_group_id'] = widget.storeGroupId!;
-      }
-
-      await supabase.from(widget.groupQueryTable).insert(postData);
-      contentController.clear();
-      FocusScope.of(context).unfocus();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('تم نشر منشورك بنجاح!'),
-            backgroundColor: Colors.green),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('حدث خطأ أثناء النشر: $e'),
-            backgroundColor: Colors.red),
-      );
-    } finally {
+    setState(() => _submitting = true);
+    final supabase = Supabase.instance.client;
+    final Map<String, dynamic> row = {
+      'content': text,
+      'user_id': supaUserId, // مطلوب لمطابقة RLS
+      // created_at يتم توليده من قاعدة البيانات
+    };
+    if (widget.storeGroupId != null) {
+      row['store_group_id'] = widget.storeGroupId;
+    }
+    if (widget.activityType != null) {
+      row['activity_type'] = widget.activityType; // لضمان ظهور المنشور في الفلتر
+    }
+    // For merchant public community we might need activity_type filter to match query
+    if (widget.groupQueryTable == 'merchant_posts') {
+      // try to fetch merchant activity_type from Firestore (optional) – skipped for performance
+    }
+  try {
+    final inserted = await supabase
+      .from(widget.groupQueryTable)
+      .insert(row)
+      .select()
+      .maybeSingle();
+    // debug: inserted id $inserted?['id']
+    await Future.delayed(const Duration(milliseconds: 80));
+      _controller.clear();
+      widget.onPostAdded?.call();
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم نشر المنشور بنجاح')),
+        );
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل نشر المنشور: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
-  }
-
-  @override
-  void dispose() {
-    contentController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final merchantName = currentUser?.displayName?.split(' ').first ?? 'التاجر';
-
-    final String initial;
-    final String? photoURL = currentUser?.photoURL;
-    final String? displayName = currentUser?.displayName;
-
-    if (displayName != null && displayName.isNotEmpty) {
-      initial = displayName.characters.first;
-    } else {
-      initial = 'ت';
-    }
-
-    return Card(
-      margin: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.deepPurple.shade100,
-                  backgroundImage: (photoURL != null && photoURL.isNotEmpty) ? NetworkImage(photoURL) : null,
-                  child: (photoURL == null || photoURL.isEmpty)
-                      ? Text(initial, style: const TextStyle(color: Colors.deepPurple))
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: contentController,
-                    decoration: InputDecoration.collapsed(
-                      hintText: 'بماذا تفكر يا $merchantName؟',
-                    ),
-                    maxLines: 5,
-                    minLines: 1,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ElevatedButton(
-                  onPressed: isLoading ? null : _addPost,
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('نشر'),
-                ),
-              ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CommentsSheet extends StatefulWidget {
-  final String groupQueryTable;
-  final String postId;
-  final String merchantId;
-  final bool isAdmin;
-  const _CommentsSheet({
-    required this.groupQueryTable,
-    required this.postId,
-    required this.merchantId,
-    required this.isAdmin,
-  });
-
-  @override
-  State<_CommentsSheet> createState() => _CommentsSheetState();
-}
-
-class _CommentsSheetState extends State<_CommentsSheet> {
-  final commentController = TextEditingController();
-  bool isLoading = false;
-
-  Future<List<Map<String, dynamic>>> _fetchComments() async {
-    final supabase = Supabase.instance.client;
-    final response = await supabase
-        .from('${widget.groupQueryTable}_comments')
-        .select()
-        .eq('postId', widget.postId)
-        .order('createdAt', ascending: true);
-    return List<Map<String, dynamic>>.from(response);
-  }
-
-  Future<void> _addComment() async {
-    if (commentController.text.trim().isEmpty) return;
-    setState(() => isLoading = true);
-    final supabase = Supabase.instance.client;
-    final merchant = FirebaseAuth.instance.currentUser;
-    String merchantName = '';
-    if (merchant != null) {
-      merchantName = merchant.displayName ?? '';
-      if (merchantName.isEmpty) {
-        final merchantRes = await supabase
-            .from('merchants')
-            .select('store_name')
-            .eq('id', merchant.uid)
-            .single();
-        merchantName = merchantRes['store_name'] ?? '';
-      }
-    }
-    if (merchantName.isEmpty) merchantName = 'تاجر';
-    await supabase.from('${widget.groupQueryTable}_comments').insert({
-      'postId': widget.postId,
-      'merchantId': widget.merchantId,
-      'merchantName': merchantName,
-      'merchantAvatar': merchant?.photoURL,
-      'content': commentController.text.trim(),
-      'createdAt': DateTime.now().toIso8601String(),
-    });
-    // تحديث عدد التعليقات
-    final post = await supabase
-        .from(widget.groupQueryTable)
-        .select('commentsCount')
-        .eq('id', widget.postId)
-        .single();
-    final currentCount = (post['commentsCount'] ?? 0) as int;
-    await supabase.from(widget.groupQueryTable).update({'commentsCount': currentCount + 1}).eq('id', widget.postId);
-    commentController.clear();
-    setState(() => isLoading = false);
-  }
-
-  Future<void> _deleteComment(String commentId) async {
-    final supabase = Supabase.instance.client;
-    await supabase.from('${widget.groupQueryTable}_comments').delete().eq('id', commentId);
-    // تحديث عدد التعليقات
-    final post = await supabase
-        .from(widget.groupQueryTable)
-        .select('commentsCount')
-        .eq('id', widget.postId)
-        .single();
-    final currentCount = (post['commentsCount'] ?? 1) as int;
-    await supabase.from(widget.groupQueryTable).update({'commentsCount': (currentCount - 1).clamp(0, 9999)}).eq('id', widget.postId);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.65,
-      child: Column(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
-          Container(
-            width: 40,
-            height: 5,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text('التعليقات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          const Divider(),
           Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _fetchComments(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final docs = snapshot.data ?? [];
-                if (docs.isEmpty) {
-                  return const Center(child: Text('لا توجد تعليقات بعد. يمكنك أن تبدأ النقاش!'));
-                }
-                return ListView.separated(
-                  itemCount: docs.length,
-                  separatorBuilder: (_, __) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final data = docs[index];
-                    final isOwner = data['merchantId'] == widget.merchantId;
-                    final merchantName = data['merchantName']?.toString() ?? 'تاجر';
-                    final avatarUrl = data['merchantAvatar'] as String?;
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.deepPurple.shade100,
-                        backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
-                        child: (avatarUrl == null || avatarUrl.isEmpty) ? Text(merchantName.isNotEmpty ? merchantName.characters.first : 'ت', style: const TextStyle(color: Colors.deepPurple)) : null,
-                      ),
-                      title: Text(merchantName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(data['content'] ?? ''),
-                      trailing: (isOwner || widget.isAdmin)
-                          ? IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              tooltip: 'حذف التعليق',
-                              onPressed: () async {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('تأكيد الحذف'),
-                                    content: const Text('هل أنت متأكد من حذف هذا التعليق؟'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context, false),
-                                        child: const Text('إلغاء'),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () => Navigator.pop(context, true),
-                                        child: const Text('حذف'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
-                                  await _deleteComment(data['id'].toString());
-                                }
-                              },
-                            )
-                          : null,
-                    );
-                  },
-                );
-              },
+            child: TextField(
+              controller: _controller,
+              minLines: 1,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'اكتب شيئاً لمجتمعك...',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
             ),
           ),
-          // واجهة إضافة التعليق دائماً في الأسفل
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: commentController,
-                    decoration: const InputDecoration(hintText: 'أضف تعليق...', border: OutlineInputBorder()),
+          const SizedBox(width: 8),
+            _submitting
+                ? const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : ElevatedButton(
+                    onPressed: _submit,
+                    child: const Text('نشر'),
                   ),
-                ),
-                const SizedBox(width: 8),
-                isLoading
-                    ? const SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 2))
-                    : IconButton(
-                        icon: const Icon(Icons.send, color: Colors.deepPurple),
-                        onPressed: _addComment,
-                      ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
-}
-
-Future<String> generateStoreCode(String storeName, String area) async {
-  String code = '$storeName-$area'.replaceAll(' ', '-');
-  // تحقق من عدم وجود الكود في قاعدة البيانات
-  final exists = await FirebaseFirestore.instance
-      .collection('merchants')
-      .where('store_code', isEqualTo: code)
-      .get();
-  if (exists.docs.isNotEmpty) {
-    // أضف رقم أو تمييز إضافي
-    code = '$code-${exists.docs.length + 1}';
-  }
-  return code;
-}
-
-Future<void> registerMerchantWithCode({
-  required String merchantId,
-  required String storeName,
-  required String area,
-  required String phone,
-  // أضف أي بيانات أخرى تحتاجها
-}) async {
-  final storeCode = await generateStoreCode(storeName, area);
-  await FirebaseFirestore.instance.collection('merchants').doc(merchantId).set({
-    'store_name': storeName,
-    'area': area,
-    'store_code': storeCode,
-    'phone': phone,
-    'createdAt': FieldValue.serverTimestamp(),
-    // أضف أي بيانات أخرى
-  }, SetOptions(merge: true));
 }

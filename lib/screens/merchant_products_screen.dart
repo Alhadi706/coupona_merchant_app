@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:coupona_merchant/widgets/home_button.dart';
 
 class MerchantProductsScreen extends StatefulWidget {
   const MerchantProductsScreen({Key? key}) : super(key: key);
@@ -46,7 +47,7 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
                   'merchantId': FirebaseAuth.instance.currentUser?.uid,
                   'name': name,
                   'points': points,
-                  'createdAt': DateTime.now().toIso8601String(),
+                  'created_at': DateTime.now().toIso8601String(),
                 });
                 Navigator.pop(ctx);
               }
@@ -65,7 +66,7 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
         .from('merchant_products')
         .select()
         .eq('merchantId', merchantId)
-        .order('createdAt', ascending: false);
+        .order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(response);
   }
 
@@ -76,6 +77,7 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
       appBar: AppBar(
         title: const Text('منتجات المحل'),
         backgroundColor: Colors.deepPurple.shade700,
+        leading: const HomeButton(color: Colors.white),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addProductDialog,

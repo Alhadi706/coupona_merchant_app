@@ -30,6 +30,12 @@ class StoreCommunityScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('مجتمع المحل'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         centerTitle: true,
       ),
       body: Column(

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive/hive.dart';
 import 'dart:math';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
 
 Future<String> ensureDemoMerchantUser() async {
   const email = 'demo_merchant@demo.com';
@@ -232,6 +233,35 @@ Future<void> ensureDemoMerchantAndData() async {
       .limit(1).get();
   if (products.docs.isEmpty) {
     await addDemoDataForMerchant(merchantId);
+  }
+}
+
+// شاشة لإضافة بيانات تجريبية
+class DemoDataScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('إضافة بيانات تجريبية'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () async {
+            await addDemoDataForMerchant(FirebaseAuth.instance.currentUser!.uid);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('تمت إضافة البيانات التجريبية بنجاح')),
+            );
+          },
+          child: const Text('إضافة بيانات تجريبية'),
+        ),
+      ),
+    );
   }
 }
 
