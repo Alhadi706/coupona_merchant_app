@@ -88,18 +88,37 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
     }
 
     try {
-      final fbUserCred = await fb_auth.FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
-      // إنشاء مستخدم في Supabase بنفس البريد وكلمة المرور إن لم يوجد
+      // فحص مسبق: هل البريد مستخدم في Firebase؟
+      final existingMethods = await fb_auth.FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      if (existingMethods.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('هذا البريد مسجل مسبقاً، استخدم تسجيل الدخول.')),
+          );
+        }
+        setState(() => _loading = false);
+        return;
+      }
+
+      // نحاول أولاً إنشاء الحساب في Supabase لتفادي ازدواجية في حال موجود مسبقاً في أحد النظامين
       try {
         await SupabaseService.client.auth.signUp(email: email, password: password);
       } catch (e) {
-        debugPrint('Supabase signUp (قد يكون موجود مسبقاً): $e');
+        final msg = e.toString().toLowerCase();
+        // إذا كان موجوداً بالفعل نحاول تسجيل الدخول بدلاً من الفشل
+        if (msg.contains('already') || msg.contains('registered') || msg.contains('exists')) {
+          try {
+            await SupabaseService.ensureLogin(email: email, password: password);
+          } catch (_) {/* تجاهل */}
+        } else {
+          debugPrint('Supabase signUp error غير متوقع: $e');
+        }
       }
-      // تسجيل الدخول Supabase لضمان توفر auth.uid()
-      try {
-        await SupabaseService.ensureLogin(email: email, password: password);
-      } catch (e) {
-        debugPrint('Supabase signIn failed: $e');
+
+      final fbUserCred = await fb_auth.FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
+      // تأكد من أننا نملك جلسة Supabase (قد تكون موجودة أصلاً)
+      if (SupabaseService.client.auth.currentUser == null) {
+        try { await SupabaseService.ensureLogin(email: email, password: password); } catch (_) {}
       }
       // جلب المستخدم الحالي بشكل موثوق بعد الإنشاء
       final user = await fb_auth.FirebaseAuth.instance.authStateChanges().first;

@@ -40,8 +40,8 @@ class MerchantAnalyticsScreen extends StatelessWidget {
       },
       {
         'icon': Icons.bar_chart,
-        'label': 'التحليلات والإحصائيات',
-        'path': '/dashboard/reports',
+        'label': 'التقارير والتحليلات',
+        'path': '/dashboard/reports'
       },
       {
         'icon': Icons.forum,
@@ -71,10 +71,7 @@ class MerchantAnalyticsScreen extends StatelessWidget {
             context,
             icon: item['icon'],
             label: item['label'],
-            onTap: () {
-              // استخدم GoRouter مباشرة للتنقل بين الشاشات
-              context.go(item['path']);
-            },
+            onTap: () => context.go(item['path']),
           );
         },
       ),

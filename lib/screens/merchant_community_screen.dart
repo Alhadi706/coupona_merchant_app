@@ -151,7 +151,21 @@ class _PostsFeedState extends State<_PostsFeed> {
 
   Future<List<Map<String, dynamic>>> _fetchPosts() async {
     final supabase = Supabase.instance.client;
-  final query = supabase.from(widget.groupQueryTable).select();
+    // ترحيل تلقائي: إصلاح user_id القديم (Firebase UID أو يساوي id) ليطابق معرف Supabase الحالي
+    try {
+      final currentUid = supabase.auth.currentUser?.id;
+      if (currentUid != null && widget.groupQueryTable == 'merchant_posts') {
+        // تحديث الصفوف التي user_id = id (خطيئة إدراج قديمة) أو user_id قصير (< 30) إلى المعرف الحالي
+        // ملاحظة: .or تستخدم صيغة فلترة OR في PostgREST
+        await supabase
+            .from(widget.groupQueryTable)
+            .update({'user_id': currentUid})
+            .or('user_id.eq.id,user_id.lt.30');
+      }
+    } catch (_) {
+      // تجاهل أي أخطاء أثناء الترحيل الصامت
+    }
+    final query = supabase.from(widget.groupQueryTable).select();
 
     if (widget.storeGroupId != null) {
       query.eq('store_group_id', widget.storeGroupId!);

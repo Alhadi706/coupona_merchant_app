@@ -45,7 +45,6 @@ dependencies:
   go_router: ^13.2.0
   intl: ^0.20.2 # تم تحديث الإصدار لحل التعارض
   qr_flutter: ^4.1.0
-  qr_code_scanner: ^1.0.1
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   fl_chart: ^0.68.0
@@ -53,6 +52,9 @@ dependencies:
   latlong2: ^0.9.1
   http: ^1.2.1
   supabase_flutter: ^2.9.1
+  mobile_scanner: ^5.0.0 # للماسح على أندرويد/iOS فقط (الإدخال اليدوي يستعمل على الويب)
+  file_picker: ^8.0.0
+  csv: ^6.0.0
 
   flutter_localizations:
     sdk: flutter

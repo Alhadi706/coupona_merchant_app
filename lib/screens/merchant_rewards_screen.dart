@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart'; // لاستخدامه في تنسيق التاريخ
 import 'package:coupona_merchant/screens/add_edit_reward_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart'; // لاستخدام context.push
 
 class MerchantRewardsScreen extends StatefulWidget {
   const MerchantRewardsScreen({Key? key}) : super(key: key);
@@ -48,6 +49,23 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
         );
       }
     }
+    // في حال لم نجد جوائز في Supabase (أو المستخدم غير مسجل في Supabase) نجلب من Firestore كحل مؤقت
+    if (rewards.isEmpty) {
+      try {
+        final fsSnapshot = await FirebaseFirestore.instance
+            .collection('rewards')
+            .where('merchant_id', isEqualTo: merchantId)
+            .where('active', isEqualTo: true)
+            .get();
+        rewards = fsSnapshot.docs.map((d) {
+          final data = d.data();
+          data['id'] = d.id;
+          return data;
+        }).toList();
+      } catch (e) {
+        // تجاهل الخطأ الاحتياطي
+      }
+    }
     try {
       final redeemedResponse = await supabase
           .from('redeemed_rewards')
@@ -56,7 +74,11 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
           .order('redeemedAt', ascending: false);
       redeemed = List<Map<String, dynamic>>.from(redeemedResponse);
     } catch (e) {
-      print("خطأ في جلب سجل الاستبدال: $e");
+      // إذا كان الجدول غير موجود (42P01) نتجاهل الخطأ حتى لا نزعج المستخدم
+      final msg = e.toString();
+      if (!msg.contains('42P01')) {
+        print("خطأ في جلب سجل الاستبدال: $e");
+      }
     }
     if (mounted) {
       setState(() => loading = false);
@@ -125,6 +147,64 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
                 );
                 if (result == true) {
                   _fetchData(); // Refresh the list if a reward was added
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.sync),
+              tooltip: 'مزامنة جوائز Firestore مع Supabase',
+              onPressed: () async {
+                final supaUser = Supabase.instance.client.auth.currentUser;
+                if (supaUser == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('سجّل الدخول أولاً (جلسة Supabase غير موجودة)')));
+                  return;
+                }
+                // جلب من Firestore ورفع إلى Supabase
+                try {
+                  final fsSnapshot = await FirebaseFirestore.instance
+                      .collection('rewards')
+                      .where('merchant_id', isEqualTo: merchantId)
+                      .get();
+                  final supa = Supabase.instance.client;
+                  for (final doc in fsSnapshot.docs) {
+                    final data = doc.data();
+                    await supa.from('rewards').upsert({
+                      'id': doc.id,
+                      'merchant_id': supaUser.id,
+                      'title': data['title'],
+                      'description': data['description'],
+                      'pointsCost': data['pointsCost'],
+                      'rewardType': data['rewardType'],
+                      'conditionPointsRequired': data['conditionPointsRequired'],
+                      'drawDate': data['drawDate'] is Timestamp ? (data['drawDate'] as Timestamp).toDate().toIso8601String() : data['drawDate'],
+                      'numberOfWinners': data['numberOfWinners'],
+                      'qrCode': data['qrCode'],
+                      'active': data['active'] ?? true,
+                      'created_at': DateTime.now().toIso8601String(),
+                    }, onConflict: 'id');
+                  }
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت المزامنة')));
+                  }
+                  _fetchData();
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل المزامنة: $e')));
+                  }
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner),
+              tooltip: 'مسح QR لاسترداد جائزة',
+              onPressed: () {
+                // استخدام GoRouter بدلاً من Navigator.pushNamed لتفادي خطأ onGenerateRoute
+                if (mounted) {
+                  try {
+                    context.push('/dashboard/rewards/scan');
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر فتح شاشة المسح: $e')));
+                  }
                 }
               },
             ),

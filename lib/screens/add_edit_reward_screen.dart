@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RewardManagementScreen extends StatefulWidget {
   const RewardManagementScreen({Key? key}) : super(key: key);
@@ -250,10 +251,41 @@ class _AddEditRewardScreenState extends State<AddEditRewardScreen> {
       };
 
       try {
+        // 1) حفظ في Firestore (للخلفية أو التوافق مع تطبيق الزبون الحالي)
         await FirebaseFirestore.instance
             .collection('rewards')
             .doc(rewardId)
             .set(rewardData, SetOptions(merge: true));
+
+        // 2) حفظ / تحديث في Supabase حتى تظهر في شاشة MerchantRewardsScreen (التي تقرأ من Supabase)
+        try {
+          final supa = Supabase.instance.client;
+          final supaUser = supa.auth.currentUser;
+            if (supaUser != null) {
+              // تجهيز بيانات Supabase مع تحويل الحقول إلى ما يتوقعه الكود الحالي (نفس الأسماء camelCase باستثناء merchant_id)
+              final supaData = {
+                'id': rewardId, // نستخدم نفس المعرف لتوحيد المصدرين
+                'merchant_id': supaUser.id,
+                'title': _title,
+                'description': _description,
+                'pointsCost': _pointsCost,
+                'rewardType': _rewardType,
+                'conditionPointsRequired': _conditionPointsRequired,
+                'drawDate': _drawDate?.toIso8601String(),
+                'numberOfWinners': _numberOfWinners,
+                'qrCode': qrCode,
+                'active': _isActive,
+                'created_at': widget.reward != null
+                    ? (widget.reward!['created_at'] is String
+                        ? widget.reward!['created_at']
+                        : DateTime.now().toIso8601String())
+                    : DateTime.now().toIso8601String(),
+              };
+              await supa.from('rewards').upsert(supaData, onConflict: 'id');
+            }
+        } catch (e) {
+          debugPrint('Supabase reward upsert error: $e');
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

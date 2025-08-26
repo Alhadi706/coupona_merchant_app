@@ -7,6 +7,8 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/offer.dart';
 
 import 'pick_location_screen.dart';
 
@@ -24,6 +26,7 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
   String? _merchantId;
+  String? _supabaseMerchantId; // المعرف الحقيقي المستخدم في جداول Supabase
 
   // Controllers and variables for form fields
   final _titleController = TextEditingController();
@@ -71,6 +74,7 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
       return;
     }
     _merchantId = user.uid;
+  _supabaseMerchantId = Supabase.instance.client.auth.currentUser?.id;
 
     // If editing an offer, populate the fields
     if (widget.offer != null) {
@@ -107,13 +111,21 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: source, imageQuality: 85, maxWidth: 1280);
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = File(pickedFile.path);
+          // عند اختيار صورة جديدة نحذف رابط القديمة حتى لا نرفع حقل قديم خطأً
+          if (_existingImageUrl != null) _existingImageUrl = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر التقاط/اختيار الصورة: $e')));
+      }
     }
   }
 
@@ -164,14 +176,7 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
       );
       return;
     }
-    if (_imageFile == null && _existingImageUrl == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('الرجاء اختيار صورة للعرض'),
-            backgroundColor: Colors.red),
-      );
-      return;
-    }
+  // الصورة أصبحت اختيارية (مسموح عدم رفع صورة)
     if (pickedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار موقع العرض على الخريطة'), backgroundColor: Colors.red),
@@ -190,33 +195,61 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
 
     try {
       final imageUrl = await _uploadImage();
-      final offerData = {
-        'title': _titleController.text,
-        'description': _descriptionController.text,
-        'originalPrice': double.parse(_originalPriceController.text),
-        'discountPercentage': int.parse(_discountPercentageController.text),
-        'startDate': Timestamp.fromDate(_startDate!),
-        'endDate': Timestamp.fromDate(_endDate!),
-        'imageUrl': imageUrl,
-        'merchantId': _merchantId,
-        'created_at': FieldValue.serverTimestamp(),
-        'location': {'lat': pickedLocation!.latitude, 'lng': pickedLocation!.longitude},
-        'type': selectedOfferType,
-      };
+      final offerModel = OfferModel(
+        id: widget.offerId ?? '',
+        merchantId: _supabaseMerchantId ?? _merchantId!,
+        title: _titleController.text,
+        description: _descriptionController.text,
+        originalPrice: double.parse(_originalPriceController.text),
+        discountPercentage: int.parse(_discountPercentageController.text),
+        startDate: _startDate!,
+        endDate: _endDate!,
+        imageUrl: imageUrl,
+        offerType: selectedOfferType,
+        location: {'lat': pickedLocation!.latitude, 'lng': pickedLocation!.longitude},
+        isActive: true,
+      );
 
       final collection = FirebaseFirestore.instance.collection('offers');
+      String docId = widget.offerId ?? '';
       if (widget.offerId != null) {
-        await collection.doc(widget.offerId).update(offerData);
+        await collection.doc(docId).update(offerModel.toFirestore());
       } else {
-        await collection.add(offerData);
+        final added = await collection.add(offerModel.toFirestore());
+        docId = added.id;
+      }
+
+      // Supabase upsert snake_case فقط
+      try {
+        final supa = Supabase.instance.client;
+        await supa.from('offers').upsert({
+          ...offerModel.copyWith(id: docId).toSupabaseInsert(),
+          'created_at': DateTime.now().toIso8601String(),
+        }, onConflict: 'id');
+        // ترحيل أي صف قديم أنشئ سابقاً بمعرف Firebase قصير إلى معرف Supabase
+        if (_supabaseMerchantId != null) {
+          final oldId = _merchantId; // snapshot
+          if (oldId != null && oldId.length < 30) {
+            await supa
+                .from('offers')
+                .update({'merchant_id': _supabaseMerchantId})
+                .match({'merchant_id': oldId});
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('تم الحفظ (تحذير مزامنة Supabase: $e)')),
+          );
+        }
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(widget.offerId == null
-                  ? 'تم إضافة العرض بنجاح'
-                  : 'تم تحديث العرض بنجاح'),
+        content: Text(widget.offerId == null
+          ? 'تم إضافة العرض ومزامنته'
+          : 'تم تحديث العرض ومزامنته'),
               backgroundColor: Colors.green),
         );
         Navigator.of(context).pop(true);
@@ -276,25 +309,77 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
                       child: Column(
                         children: [
                           Container(
-                            height: 150,
+                            height: 160,
                             width: double.infinity,
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey),
                               borderRadius: BorderRadius.circular(8),
+                              color: Colors.grey.shade50,
                             ),
                             child: _imageFile != null
-                                ? Image.file(_imageFile!, fit: BoxFit.cover)
+                                ? Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      Image.file(_imageFile!, fit: BoxFit.cover),
+                                      Positioned(
+                                        top: 4,
+                                        right: 4,
+                                        child: CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor: Colors.black54,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                            onPressed: () {
+                                              setState(() { _imageFile = null; });
+                                            },
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  )
                                 : (_existingImageUrl != null
-                                    ? Image.network(_existingImageUrl!,
-                                        fit: BoxFit.cover)
-                                    : const Center(
-                                        child: Text('لم يتم اختيار صورة'))),
+                                    ? Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          Image.network(_existingImageUrl!, fit: BoxFit.cover),
+                                          Positioned(
+                                            top: 4,
+                                            right: 4,
+                                            child: CircleAvatar(
+                                              radius: 16,
+                                              backgroundColor: Colors.black54,
+                                              child: IconButton(
+                                                padding: EdgeInsets.zero,
+                                                icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                                onPressed: () {
+                                                  setState(() { _existingImageUrl = null; });
+                                                },
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      )
+                                    : const Center(child: Text('صورة العرض (اختيارية)'))),
                           ),
-                          TextButton.icon(
-                            icon: const Icon(Icons.image),
-                            label: const Text('اختيار صورة للعرض'),
-                            onPressed: _pickImage,
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.photo),
+                                label: const Text('من الاستوديو'),
+                                onPressed: () => _pickImage(ImageSource.gallery),
+                              ),
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.photo_camera),
+                                label: const Text('التقاط بالكاميرا'),
+                                onPressed: () => _pickImage(ImageSource.camera),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 4),
+                          const Text('يمكن ترك الصورة فارغة، أو اختيار/التقاط صورة جديدة.', style: TextStyle(fontSize: 12, color: Colors.grey)),
                         ],
                       ),
                     ),

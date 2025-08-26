@@ -18,28 +18,129 @@ class MerchantOffersScreen extends StatefulWidget {
 
 class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
   String? _merchantId;
+  String? _supabaseMerchantId;
   String _searchQuery = '';
+  bool _migrating = false;
+  int _migratedCount = 0;
 
   @override
   void initState() {
     super.initState();
     // استخدم FirebaseAuth للحصول على معرف المستخدم الصحيح
     final user = FirebaseAuth.instance.currentUser;
-    _merchantId = user?.uid;
+  _merchantId = user?.uid; // Firebase UID
+  _supabaseMerchantId = Supabase.instance.client.auth.currentUser?.id; // Supabase UUID
+  // محاولة ترحيل معرفات قديمة (Firebase) إلى Supabase في الجدول
+  _migrateMerchantIds();
+    // بعد الإطار الأول شغّل الترحيل التلقائي (لن يعمل كثيراً بسبب التخزين)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeMigrateOffers());
+  }
+
+  Future<void> _maybeMigrateOffers({bool force = false}) async {
+    if (_merchantId == null) return;
+    try {
+      final box = await Hive.openBox('offers_migration_meta');
+      final key = 'last_migration_${_merchantId!}';
+      final lastIso = box.get(key) as String?;
+      if (!force && lastIso != null) {
+        final last = DateTime.tryParse(lastIso);
+        if (last != null && DateTime.now().difference(last).inHours < 6) {
+          return; // لا نكرر الترحيل خلال 6 ساعات إلا عند force
+        }
+      }
+      setState(() {
+        _migrating = true;
+        _migratedCount = 0;
+      });
+      final supa = Supabase.instance.client;
+      // اجلب المعرفات الحالية في Supabase
+      final existing = await supa.from('offers').select('id').eq('merchant_id', _merchantId!);
+      final existingIds = <String>{};
+      for (final row in existing) {
+        final id = row['id'];
+        if (id is String) existingIds.add(id);
+      }
+      // اجلب عروض Firestore
+      final fsSnap = await FirebaseFirestore.instance
+          .collection('offers')
+          .where('merchantId', isEqualTo: _merchantId)
+          .get();
+      for (final doc in fsSnap.docs) {
+        if (existingIds.contains(doc.id)) continue; // موجود بالفعل
+        final d = doc.data();
+        try {
+          await supa.from('offers').upsert({
+            'id': doc.id,
+            'merchant_id': _merchantId,
+            'title': d['title'],
+            'description': d['description'],
+            'imageUrl': d['imageUrl'],
+            'startDate': d['startDate'] is Timestamp ? (d['startDate'] as Timestamp).toDate().toIso8601String() : d['startDate'],
+            'endDate': d['endDate'] is Timestamp ? (d['endDate'] as Timestamp).toDate().toIso8601String() : d['endDate'],
+            'originalPrice': d['originalPrice'],
+            'discountPercentage': d['discountPercentage'],
+            'type': d['type'],
+            'location': d['location'],
+            'isActive': d['isActive'] ?? true,
+            'created_at': DateTime.now().toIso8601String(),
+          }, onConflict: 'id');
+          _migratedCount++;
+        } catch (e) {
+          // نتابع بقية العناصر
+          debugPrint('فشل ترحيل عرض ${doc.id}: $e');
+        }
+      }
+      await box.put(key, DateTime.now().toIso8601String());
+      if (mounted && _migratedCount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تم ترحيل $_migratedCount عرض من Firestore')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل الترحيل التلقائي: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _migrating = false;
+        });
+      }
+    }
   }
 
   Stream<List<Map<String, dynamic>>> _getOffersStream() {
     final supabase = Supabase.instance.client;
-    if (_merchantId == null) {
+    final effectiveId = _supabaseMerchantId ?? _merchantId;
+    if (effectiveId == null) {
       // أرجع stream فارغ إذا لم يكن هناك معرف تاجر
       return const Stream<List<Map<String, dynamic>>>.empty();
     }
     return supabase
         .from('offers')
         .stream(primaryKey: ['id'])
-        .eq('merchant_id', _merchantId!)
+        .inFilter('merchant_id', [effectiveId, if (_merchantId != null) _merchantId!])
         .order('created_at', ascending: false)
         .map((offers) => List<Map<String, dynamic>>.from(offers));
+  }
+
+  Future<void> _migrateMerchantIds() async {
+    if (_merchantId == null || _supabaseMerchantId == null) return;
+    if (_merchantId!.length > 30) return; // يبدو أنه UUID بالفعل
+    try {
+      final supa = Supabase.instance.client;
+  final oldId = _merchantId; // تثبيت القيمة لتفادي مشكلة الترويج للنوع
+  if (oldId != null && oldId.isNotEmpty) {
+    await supa
+    .from('offers')
+    .update({'merchant_id': _supabaseMerchantId})
+    .match({'merchant_id': oldId});
+  }
+    } catch (e) {
+      debugPrint('فشل ترحيل معرفات العروض: $e');
+    }
   }
 
   Future<void> deleteOffer(String offerId) async {
@@ -110,6 +211,11 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
               );
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'مزامنة/ترحيل العروض القديمة',
+            onPressed: () => _maybeMigrateOffers(force: true),
+          ),
         ],
       ),
       body: Column(
@@ -134,6 +240,8 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
               ),
             ),
           ),
+          if (_migrating)
+            const LinearProgressIndicator(minHeight: 3),
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _getOffersStream(),
@@ -202,9 +310,9 @@ class _OfferCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isActive = offer['isActive'] ?? true;
-    final type = offer['type'] ?? 'N/A';
-    final endDateStr = offer['endDate'];
+  final isActive = offer['is_active'] ?? offer['isActive'] ?? true;
+  final type = offer['offer_type'] ?? offer['type'] ?? 'N/A';
+  final endDateStr = offer['end_date'] ?? offer['endDate'];
     String displayEndDate = 'غير محدد';
     if (endDateStr is String) {
       final date = DateTime.tryParse(endDateStr);
@@ -268,9 +376,9 @@ class _OfferCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: (offer['imageUrl'] != null && offer['imageUrl'].toString().isNotEmpty)
+        child: ((offer['image_url'] ?? offer['imageUrl']) != null && (offer['image_url'] ?? offer['imageUrl']).toString().isNotEmpty)
                   ? Image.network(
-                      offer['imageUrl'],
+          (offer['image_url'] ?? offer['imageUrl']).toString(),
                       width: 80,
                       height: 80,
                       fit: BoxFit.cover,
@@ -362,7 +470,7 @@ class _OfferCard extends StatelessWidget {
                         builder: (context) => AddOfferScreen(
                           offer: offer,
                           offerId: offer['id'],
-                          merchantId: offer['merchantId'],
+                          merchantId: offer['merchant_id'] ?? offer['merchantId'],
                         ),
                       ),
                     );

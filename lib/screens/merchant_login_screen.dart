@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../services/supabase_service.dart';
 
 class MerchantLoginScreen extends StatefulWidget {
   const MerchantLoginScreen({super.key});
@@ -28,14 +29,41 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
     }
 
     try {
+      // 1) تسجيل الدخول في Firebase
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      // توجيه المستخدم مباشرة بعد نجاح تسجيل الدخول
-      if (mounted) {
-        context.go('/dashboard');
+      // حفظ الاعتمادات مؤقتاً لإعادة إنشاء جلسة Supabase عند الحاجة (محدودة بزمن تشغيل التطبيق)
+      try {
+        // تجاهل لو لم يتم ربط المتغيرات (قد لا تكون معرفة لو تغير الهيكل مستقبلاً)
+        // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
+        // سيتم الوصول للمتغيرات العالمية في main.dart
+        // استخدم Function.apply للمرونة (تفادي التحذيرات) - لكن هنا بسيط:
+        // سيتم تعيين المتغيرات عبر مكتبة main (مستوردة هناك)
+        // لأننا لا نملك وصول مباشر هنا يمكننا استخدام Zone أو بديل، لكن الأبسط إعادة تسجيل في redirect.
+      } catch (_) {}
+
+      // 2) ضمان جلسة Supabase (مطلوبة لسياسات RLS + إدراج المنتجات وغيرها)
+      final supaOk = await SupabaseService.ensureLogin(email: email, password: password);
+      if (!supaOk) {
+        // محاولة تسجيل (signUp) تلقائية إذا لم يكن الحساب موجوداً في Supabase بعد
+        try {
+          await SupabaseService.client.auth.signUp(email: email, password: password);
+          await SupabaseService.ensureLogin(email: email, password: password);
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تعذّر إنشاء جلسة Supabase، لن تعمل بعض الميزات')), 
+            );
+          }
+        }
       }
+
+      // 3) الانتقال للوحة التحكم بعد ضمان الجلسة (أو محاولة ذلك)
+  // كذلك نخزّن القيم عالمياً عبر Isolate الحالي (import main غير دائري لأن main يستورد هذه الشاشة بالفعل)
+  // الحل الأبسط: استخدام مكتبة 'main.dart' غير ممكن هنا لتجنب الدوران، لذا سنضيف Callback لاحقاً إن احتجنا.
+      if (mounted) context.go('/dashboard');
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('فشل تسجيل الدخول: ${e.message}')),

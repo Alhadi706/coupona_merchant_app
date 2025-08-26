@@ -16,8 +16,12 @@ import 'screens/merchant_rewards_screen.dart';
 import 'screens/store_community_screen.dart';
 import 'screens/merchant_community_screen.dart';
 import 'screens/merchant_stats_screen.dart';
+import 'screens/merchant_receipts_screen.dart';
+import 'screens/reward_qr_scanner_screen.dart';
+import 'screens/points_settings_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'services/supabase_service.dart';
+import 'services/session_guard.dart';
 import 'screens/settings_screen.dart'; // استيراد شاشة الإعدادات
 
 void main() async {
@@ -56,24 +60,26 @@ void main() async {
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+// استخدام SessionGuard (انظر services/session_guard.dart) بدلاً من المتغيرات المحلية.
+
 final _router = GoRouter(
   navigatorKey: navigatorKey,
-  // إضافة منطق إعادة التوجيه
-  redirect: (BuildContext context, GoRouterState state) {
+  // إضافة منطق إعادة التوجيه مع حارس جلسة Supabase
+  redirect: (BuildContext context, GoRouterState state) async {
     final bool loggedIn = fb_auth.FirebaseAuth.instance.currentUser != null;
     final bool loggingIn = state.matchedLocation == '/' || state.matchedLocation == '/register';
 
-    // إذا لم يكن المستخدم مسجلاً دخوله ويحاول الوصول لصفحة داخلية
+    // حارس جلسة Supabase: إذا جلسة Firebase موجودة لكن Supabase مفقودة نحاول إعادة تسجيل الدخول بصمت
+    if (loggedIn && Supabase.instance.client.auth.currentUser == null && SessionGuard.lastEmail != null && SessionGuard.lastPassword != null) {
+      try { await SupabaseService.ensureLogin(email: SessionGuard.lastEmail!, password: SessionGuard.lastPassword!); } catch (_) {}
+    }
+
     if (!loggedIn && !loggingIn) {
-      return '/'; // اذهب لشاشة الدخول
+      return '/';
     }
-
-    // إذا كان المستخدم مسجلاً دخوله ويحاول الوصول لشاشة الدخول أو التسجيل
     if (loggedIn && loggingIn) {
-      return '/dashboard'; // اذهب للوحة التحكم
+      return '/dashboard';
     }
-
-    // في الحالات الأخرى، لا تقم بإعادة التوجيه
     return null;
   },
   routes: [
@@ -106,12 +112,20 @@ final _router = GoRouter(
       builder: (context, state) => const MerchantProductsScreen(),
     ),
     GoRoute(
+      path: '/dashboard/receipts',
+      builder: (context, state) => const MerchantReceiptsScreen(),
+    ),
+    GoRoute(
       path: '/dashboard/reports',
   builder: (context, state) => const MerchantStatsScreen(),
     ),
     GoRoute(
       path: '/dashboard/rewards',
       builder: (context, state) => const MerchantRewardsScreen(),
+    ),
+    GoRoute(
+      path: '/dashboard/rewards/scan',
+      builder: (context, state) => const RewardQrScannerScreen(),
     ),
     // شاشة المجتمع الرئيسية (مجتمع التجار + قروب المحل)
     GoRoute(
@@ -129,6 +143,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/dashboard/settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/dashboard/points-settings',
+      builder: (context, state) => const PointsSettingsScreen(),
     ),
   ],
 );
