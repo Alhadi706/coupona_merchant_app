@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:coupona_merchant/services/auth_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:coupona_merchant/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
@@ -39,12 +40,13 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
   String? _existingImageUrl;
   LatLng? pickedLocation;
 
-  final List<String> offerTypes = [
-    'خصم مباشر',
-    'هدية مع الشراء',
-    'كوبون',
-    'عرض لفترة محدودة',
-    'آخر...'
+  // Internal canonical offer types mapped to localized labels at build time
+  final List<String> _offerTypeCodes = [
+    'discount',
+    'gift',
+    'coupon',
+    'limited',
+    'other'
   ];
   String? selectedOfferType;
 
@@ -64,11 +66,11 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('يجب تسجيل الدخول أولاً.'),
-              backgroundColor: Colors.red),
-        );
+        final t = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(t.mustLoginFirst),
+          backgroundColor: Colors.red,
+        ));
         Navigator.of(context).pop();
       }
       return;
@@ -93,7 +95,7 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
         pickedLocation = LatLng(loc['lat'] ?? 0.0, loc['lng'] ?? 0.0);
       }
       if (widget.offer!['type'] != null) {
-        selectedOfferType = widget.offer!['type'];
+        selectedOfferType = _mapLegacyOfferType(widget.offer!['type'].toString());
       }
     }
 
@@ -124,7 +126,8 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر التقاط/اختيار الصورة: $e')));
+  final t = AppLocalizations.of(context)!;
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.imagePickFailed(e.toString()))));
       }
     }
   }
@@ -169,24 +172,22 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
       return;
     }
     if (_startDate == null || _endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('الرجاء تحديد تاريخ البدء والانتهاء'),
-            backgroundColor: Colors.red),
-      );
+      final t = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(t.selectStartEndDates),
+        backgroundColor: Colors.red,
+      ));
       return;
     }
   // الصورة أصبحت اختيارية (مسموح عدم رفع صورة)
     if (pickedLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار موقع العرض على الخريطة'), backgroundColor: Colors.red),
-      );
+      final t = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.offerLocationRequired), backgroundColor: Colors.red));
       return;
     }
     if (selectedOfferType == null || selectedOfferType!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار نوع العرض'), backgroundColor: Colors.red),
-      );
+      final t = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.offerTypeRequired), backgroundColor: Colors.red));
       setState(() => _loading = false);
       return;
     }
@@ -238,28 +239,21 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('تم الحفظ (تحذير مزامنة Supabase: $e)')),
-          );
+          final t = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.savedWithSupabaseWarning(e.toString()))));
         }
       }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-        content: Text(widget.offerId == null
-          ? 'تم إضافة العرض ومزامنته'
-          : 'تم تحديث العرض ومزامنته'),
-              backgroundColor: Colors.green),
-        );
+  if (mounted) {
+    final t = AppLocalizations.of(context)!;
+    final successMsg = widget.offerId == null ? t.offerAddedSynced : t.offerUpdatedSynced;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(successMsg), backgroundColor: Colors.green));
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('حدث خطأ: $e'), backgroundColor: Colors.red),
-        );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
       }
     } finally {
       if (mounted) {
@@ -271,9 +265,10 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
   @override
   Widget build(BuildContext context) {
     print('Building AddOfferScreen with back button');
-    return Scaffold(
+  final t = AppLocalizations.of(context)!;
+  return Scaffold(
       appBar: AppBar(
-        title: const Text('إضافة عرض جديد'),
+    title: Text(t.addOfferTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -360,26 +355,26 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
                                           )
                                         ],
                                       )
-                                    : const Center(child: Text('صورة العرض (اختيارية)'))),
+                  : Center(child: Text(t.offerImagePlaceholderOptional))),
                           ),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
                             children: [
                               OutlinedButton.icon(
-                                icon: const Icon(Icons.photo),
-                                label: const Text('من الاستوديو'),
+                icon: const Icon(Icons.photo),
+                label: Text(t.pickFromGallery),
                                 onPressed: () => _pickImage(ImageSource.gallery),
                               ),
                               OutlinedButton.icon(
-                                icon: const Icon(Icons.photo_camera),
-                                label: const Text('التقاط بالكاميرا'),
+                icon: const Icon(Icons.photo_camera),
+                label: Text(t.captureWithCamera),
                                 onPressed: () => _pickImage(ImageSource.camera),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          const Text('يمكن ترك الصورة فارغة، أو اختيار/التقاط صورة جديدة.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 4),
+              Text(t.imageOptionalNote, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -388,27 +383,29 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
                     // Title
                     TextFormField(
                       controller: _titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'عنوان العرض',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.title),
+                      decoration: InputDecoration(
+                        labelText: t.offerTitleLabel,
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.title),
                       ),
                       validator: (value) =>
-                          value!.isEmpty ? 'هذا الحقل مطلوب' : null,
+                          value!.isEmpty ? t.requiredField : null,
                     ),
+                    // overlay labelText via InputDecoration in build using copyWith not trivial here; simplest: use hint
+                    // For simplicity leave label replaced by localized hint style
                     const SizedBox(height: 16),
 
                     // Description
                     TextFormField(
                       controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'وصف العرض',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.description),
+                      decoration: InputDecoration(
+                        labelText: t.offerDescriptionLabel,
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.description),
                       ),
                       maxLines: 3,
                       validator: (value) =>
-                          value!.isEmpty ? 'هذا الحقل مطلوب' : null,
+                          value!.isEmpty ? t.requiredField : null,
                     ),
                     const SizedBox(height: 16),
 
@@ -418,31 +415,31 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _originalPriceController,
-                            decoration: const InputDecoration(
-                              labelText: 'السعر الأصلي',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.attach_money),
+                            decoration: InputDecoration(
+                              labelText: t.originalPriceLabel,
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.attach_money),
                             ),
                             keyboardType: TextInputType.number,
                             validator: (value) =>
-                                value!.isEmpty ? 'هذا الحقل مطلوب' : null,
+                                value!.isEmpty ? t.requiredField : null,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: TextFormField(
                             controller: _discountPercentageController,
-                            decoration: const InputDecoration(
-                              labelText: 'نسبة الخصم (%)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.percent),
+                            decoration: InputDecoration(
+                              labelText: t.discountPercentageLabel,
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.percent),
                             ),
                             keyboardType: TextInputType.number,
                             validator: (value) {
-                              if (value!.isEmpty) return 'هذا الحقل مطلوب';
+                              if (value!.isEmpty) return t.requiredField;
                               final p = int.tryParse(value);
                               if (p == null || p < 1 || p > 99) {
-                                return 'ادخل نسبة بين 1-99';
+                                return t.discountPercentageInvalid;
                               }
                               return null;
                             },
@@ -458,12 +455,11 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
                       children: [
                         Column(
                           children: [
-                            const Text('تاريخ البدء',
-                                style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(t.startDateLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
                             TextButton.icon(
                               icon: const Icon(Icons.calendar_today),
                               label: Text(_startDate == null
-                                  ? 'اختيار'
+              ? t.chooseGeneric
                                   : DateFormat('yyyy/MM/dd')
                                       .format(_startDate!)),
                               onPressed: () => _pickDate(context, true),
@@ -472,12 +468,11 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
                         ),
                         Column(
                           children: [
-                            const Text('تاريخ الانتهاء',
-                                style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(t.endDateLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
                             TextButton.icon(
                               icon: const Icon(Icons.event_busy),
                               label: Text(_endDate == null
-                                  ? 'اختيار'
+              ? t.chooseGeneric
                                   : DateFormat('yyyy/MM/dd')
                                       .format(_endDate!)),
                               onPressed: () => _pickDate(context, false),
@@ -489,7 +484,7 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
                     const SizedBox(height: 16),
                     TextButton.icon(
                       icon: const Icon(Icons.location_on, color: Colors.deepPurple),
-                      label: Text(pickedLocation == null ? 'حدد موقع العرض على الخريطة' : 'تم اختيار الموقع'),
+                      label: Text(pickedLocation == null ? t.pickOfferLocation : t.offerLocationPicked),
                       onPressed: () async {
                         final result = await Navigator.push(
                           context,
@@ -507,28 +502,60 @@ class _AddOfferScreenState extends State<AddOfferScreen> {
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: selectedOfferType,
-                      items: offerTypes
-                          .map((type) => DropdownMenuItem(
-                                value: type,
-                                child: Text(type),
-                              ))
-                          .toList(),
+                      items: _offerTypeCodes.map((code) {
+                        final label = _localizedOfferType(code, t);
+                        return DropdownMenuItem(value: code, child: Text(label));
+                      }).toList(),
                       onChanged: (val) {
                         setState(() {
                           selectedOfferType = val;
                         });
                       },
-                      decoration: const InputDecoration(
-                        labelText: 'نوع العرض',
-                        prefixIcon: Icon(Icons.category),
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: t.offerTypeLabel,
+                        prefixIcon: const Icon(Icons.category),
+                        border: const OutlineInputBorder(),
                       ),
-                      validator: (value) => value == null || value.isEmpty ? 'يرجى اختيار نوع العرض' : null,
+                      validator: (value) => value == null || value.isEmpty ? t.offerTypeRequired : null,
                     ),
                   ],
                 ),
               ),
             ),
     );
+  }
+
+  String _localizedOfferType(String code, AppLocalizations t) {
+    switch (code) {
+      case 'discount':
+        return t.offerTypeDiscount;
+      case 'gift':
+        return t.offerTypeGift;
+      case 'coupon':
+        return t.offerTypeCoupon;
+      case 'limited':
+        return t.offerTypeLimitedTime;
+      case 'other':
+      default:
+        return t.offerTypeOther;
+    }
+  }
+
+  String _mapLegacyOfferType(String legacy) {
+    switch (legacy) {
+      case 'خصم مباشر':
+        return 'discount';
+      case 'هدية مع الشراء':
+        return 'gift';
+      case 'كوبون':
+        return 'coupon';
+      case 'عرض لفترة محدودة':
+        return 'limited';
+      case 'آخر...':
+        return 'other';
+      default:
+        // Already a code or unknown
+        return legacy;
+    }
   }
 }

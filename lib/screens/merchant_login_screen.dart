@@ -2,6 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/supabase_service.dart';
+import '../services/session_guard.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MerchantLoginScreen extends StatefulWidget {
   const MerchantLoginScreen({super.key});
@@ -21,53 +24,56 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى إدخال البريد الإلكتروني وكلمة المرور')),
-      );
+  final loc = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.enterEmailPassword ?? 'Enter email & password')));
       setState(() => _loading = false);
       return;
     }
 
     try {
-      // 1) تسجيل الدخول في Firebase
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      // حفظ الاعتمادات مؤقتاً لإعادة إنشاء جلسة Supabase عند الحاجة (محدودة بزمن تشغيل التطبيق)
-      try {
-        // تجاهل لو لم يتم ربط المتغيرات (قد لا تكون معرفة لو تغير الهيكل مستقبلاً)
-        // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
-        // سيتم الوصول للمتغيرات العالمية في main.dart
-        // استخدم Function.apply للمرونة (تفادي التحذيرات) - لكن هنا بسيط:
-        // سيتم تعيين المتغيرات عبر مكتبة main (مستوردة هناك)
-        // لأننا لا نملك وصول مباشر هنا يمكننا استخدام Zone أو بديل، لكن الأبسط إعادة تسجيل في redirect.
-      } catch (_) {}
+      // 1) تسجيل الدخول في Firebase أولاً
+      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
+      // تذكر الاعتمادات مؤقتاً (للاستخدام في redirect في main)
+      SessionGuard.remember(email, password);
 
-      // 2) ضمان جلسة Supabase (مطلوبة لسياسات RLS + إدراج المنتجات وغيرها)
-      final supaOk = await SupabaseService.ensureLogin(email: email, password: password);
-      if (!supaOk) {
-        // محاولة تسجيل (signUp) تلقائية إذا لم يكن الحساب موجوداً في Supabase بعد
-        try {
-          await SupabaseService.client.auth.signUp(email: email, password: password);
-          await SupabaseService.ensureLogin(email: email, password: password);
-        } catch (_) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تعذّر إنشاء جلسة Supabase، لن تعمل بعض الميزات')), 
-            );
+  // 2) محاولة الجسر (إنشاء/تسجيل مستخدم Supabase بكلمة مشتقة من UID إن لزم)
+  bool bridged = await SupabaseService.ensureBridgedSessionFromFirebase();
+  // ignore: avoid_print
+  print('[login] bridged=$bridged');
+
+      // 3) إن فشل الجسر (مثلاً لسبب مؤقت) نحاول نفس البريد/كلمة المرور مباشرة
+      if (!bridged) {
+        final supaOk = await SupabaseService.ensureLogin(email: email, password: password);
+        // ignore: avoid_print
+        print('[login] ensureLogin with user password => $supaOk');
+        if (!supaOk) {
+          // 4) محاولة signUp ثم تسجيل الدخول بكلمة المستخدم (قد تكون حساب Supabase مستقل)
+          try {
+            await SupabaseService.client.auth.signUp(email: email, password: password);
+            final second = await SupabaseService.ensureLogin(email: email, password: password);
+            // ignore: avoid_print
+            print('[login] post-signUp ensureLogin => $second');
+          } catch (e) {
+            // ignore: avoid_print
+            print('[login] signUp fallback error: $e');
           }
         }
       }
 
-      // 3) الانتقال للوحة التحكم بعد ضمان الجلسة (أو محاولة ذلك)
-  // كذلك نخزّن القيم عالمياً عبر Isolate الحالي (import main غير دائري لأن main يستورد هذه الشاشة بالفعل)
-  // الحل الأبسط: استخدام مكتبة 'main.dart' غير ممكن هنا لتجنب الدوران، لذا سنضيف Callback لاحقاً إن احتجنا.
-      if (mounted) context.go('/dashboard');
+      // 5) الانتقال للوحة التحكم
+      if (mounted) {
+        final authUser = Supabase.instance.client.auth.currentUser;
+        if (authUser == null) {
+          final loc = AppLocalizations.of(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(loc?.supabaseSessionFailed ?? 'Supabase session failed')),
+          );
+        }
+        context.go('/dashboard');
+      }
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل تسجيل الدخول: ${e.message}')),
-      );
+  final loc = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${loc?.loginFailed ?? 'Login failed'}: ${e.message}')));
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -87,7 +93,7 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('دخول التاجر'),
+  title: Text(AppLocalizations.of(context)?.merchantLoginTitle ?? 'Merchant Login'),
         centerTitle: true,
       ),
       body: Padding(
@@ -105,20 +111,20 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
               const SizedBox(height: 40),
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'البريد الإلكتروني',
-                  prefixIcon: Icon(Icons.email),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)?.emailLabel ?? 'Email',
+                  prefixIcon: const Icon(Icons.email),
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'كلمة المرور',
-                  prefixIcon: Icon(Icons.lock),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)?.passwordLabel ?? 'Password',
+                  prefixIcon: const Icon(Icons.lock),
+                  border: const OutlineInputBorder(),
                 ),
                 obscureText: true,
               ),
@@ -137,12 +143,12 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
                         width: 24,
                         child: CircularProgressIndicator(color: Colors.white),
                       )
-                    : const Text('دخول', style: TextStyle(fontSize: 18)),
+                    : Text(AppLocalizations.of(context)?.loginButton ?? 'Login', style: const TextStyle(fontSize: 18)),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: _goToRegisterScreen, // تم الربط بالدالة الجديدة لمنع التداخل
-                child: const Text('إنشاء حساب تاجر جديد'),
+                child: Text(AppLocalizations.of(context)?.createMerchantAccount ?? 'Create account'),
               ),
               const SizedBox(height: 16),
               Align(
@@ -150,13 +156,11 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
                 child: TextButton(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('سيتم إرسال رابط استرجاع كلمة المرور'),
-                      ),
+            SnackBar(content: Text(AppLocalizations.of(context)?.sendResetLink ?? 'Reset link will be sent')),
                     );
                   },
-                  child: const Text('نسيت كلمة المرور؟',
-                      style: TextStyle(color: Colors.deepPurple)),
+          child: Text(AppLocalizations.of(context)?.forgotPassword ?? 'Forgot password?',
+            style: const TextStyle(color: Colors.deepPurple)),
                 ),
               ),
             ],

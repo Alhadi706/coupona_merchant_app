@@ -1,0 +1,263 @@
+{
+  "appTitle": "Tüccar Uygulaması",
+  "login": "Giriş",
+  "logout": "Çıkış",
+  "settings": "Ayarlar",
+  "language": "Dil",
+  "noMerchantCode": "Kod yok",
+  "copied": "Kopyalandı",
+  "merchantCode": "Tüccar Kodu",
+  "home": "Ana Sayfa",
+  "offers": "Teklifler",
+  "customers": "Müşteriler",
+  "products": "Ürünler",
+  "receipts": "Fişler",
+  "copiedMerchantCode": "Tüccar kodu kopyalandı",
+  "close": "Kapat",
+  "merchantLoginTitle": "Tüccar Girişi",
+  "enterEmailPassword": "Lütfen e-posta ve şifre girin",
+  "loginFailed": "Giriş başarısız",
+  "loginButton": "Giriş",
+  "createMerchantAccount": "Yeni hesap oluştur",
+  "forgotPassword": "Şifreyi mi unuttun?",
+  "sendResetLink": "Sıfırlama bağlantısı gönderilecek",
+  "supabaseSessionFailed": "Supabase oturumu oluşturulamadı",
+  "emailLabel": "E-posta",
+  "passwordLabel": "Şifre",
+  "registerTitle": "Tüccar Kaydı",
+  "fillAllFields": "Tüm alanları doldurun",
+  "passwordsNotMatch": "Şifreler uyuşmuyor",
+  "invalidEmail": "Geçersiz e-posta",
+  "pickStoreLocation": "Haritada mağaza konumu seçin",
+  "emailAlreadyUsed": "E-posta zaten kayıtlı, giriş yapın.",
+  "accountCreatedSuccess": "Hesap başarıyla oluşturuldu!",
+  "accountCreateFailed": "Hesap oluşturma başarısız",
+  "unexpectedError": "Beklenmeyen hata",
+  "confirmPasswordLabel": "Şifreyi Onayla",
+  "storeNameLabel": "Mağaza Adı",
+  "phoneLabel": "Telefon",
+  "activityTypeLabel": "Faaliyet Türü",
+  "otherActivityLabel": "Diğer",
+  "locationLabel": "Konum",
+  "registerButton": "Kayıt Ol",
+  "selectLocationButton": "Konum seç",
+  "getAutoLocationButton": "Otomatik konum",
+  "locatingMessage": "Konum alınıyor...",
+  "manageOffersTitle": "Teklifleri Yönet",
+  "addNewOffer": "Yeni teklif",
+  "migrateOldOffers": "Eski teklifleri taşı",
+  "offerIdMissing": "Teklif kimliği yok!",
+  "offerDeleted": "Teklif silindi.",
+  "offerDeleteFailed": "Silme başarısız",
+  "offerStatusChanged": "Teklif durumu değişti.",
+  "offerStatusChangeFailed": "Durum değişimi başarısız",
+  "autoMigrationFailed": "Otomatik taşıma başarısız",
+  "offersMigratedCount": "Firestore'dan {count} teklif taşındı",
+  "@offersMigratedCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"productsScreenTitle": "Mağaza Ürünleri"
+  ,"importCsv": "CSV İçe Aktar"
+  ,"csvTemplate": "Şablon"
+  ,"exportCsv": "CSV Dışa Aktar"
+  ,"refresh": "Yenile"
+  ,"searchHintProducts": "Hızlı / bulanık ürün adı..."
+  ,"debugProductsBanner": "[DEBUG] Ürün ekranı"
+  ,"noProductsYet": "Henüz ürün yok"
+  ,"addProductManual": "Manuel ürün ekle"
+  ,"addProduct": "Ekle"
+  ,"addProductTitle": "Yeni Ürün"
+  ,"productNameLabel": "Ürün Adı"
+  ,"productPointsLabel": "Ürün puanı"
+  ,"basisSelectionLabel": "Puan temeli:"
+  ,"basisProductDirect": "Doğrudan ürün"
+  ,"basisPrice": "Fiyat"
+  ,"basisQuantity": "Miktar"
+  ,"basisOperation": "Alım işlemi"
+  ,"cancel": "İptal"
+  ,"supabaseSessionMissing": "Supabase oturumu yok"
+  ,"productAdded": "Ürün eklendi"
+  ,"productAddFailed": "Ekleme başarısız"
+  ,"editProductTitle": "Ürünü Düzenle"
+  ,"productNameImmutable": "İsim (değişmez)"
+  ,"productUpdated": "Güncellendi"
+  ,"productUpdateFailed": "Güncelleme başarısız"
+  ,"emptyResults": "Sonuç yok"
+  ,"clear": "Temizle"
+  ,"searchResultsCount": "Sonuç: {count}"
+  ,"@searchResultsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"tableMissingTitle": "Tablo eksik"
+  ,"tableMissingMessage": "Supabase'de merchant_products tablosu oluşturun ve yeniden açın."
+  ,"recheck": "Tekrar kontrol"
+  ,"csvFileEmpty": "Dosya boş"
+  ,"missingName": "İsim eksik"
+  ,"invalidPoints": "Geçersiz puan"
+  ,"noProcessableRows": "İşlenecek satır yok"
+  ,"parseFailed": "Ayrıştırma başarısız"
+  ,"importReviewTitle": "İçe aktarma inceleme"
+  ,"validInvalidCount": "Geçerli: {valid} | Hata: {invalid}"
+  ,"@validInvalidCount": {"placeholders": {"valid": {"type": "int"}, "invalid": {"type": "int"}}}
+  ,"skipDuplicateProducts": "Aynı isimlileri atla"
+  ,"importingEllipsis": "İçe aktarılıyor..."
+  ,"importProductsButton": "İçe aktar {count}"
+  ,"@importProductsButton": {"placeholders": {"count": {"type": "int"}}}
+  ,"sessionMissing": "Oturum yok"
+  ,"noNewItemsAfterDuplicates": "Kopyalardan sonra yeni yok"
+  ,"insertedProductsResult": "Eklendi {inserted} (Reddedildi {rejected})"
+  ,"@insertedProductsResult": {"placeholders": {"inserted": {"type": "int"}, "rejected": {"type": "int"}}}
+  ,"importFailed": "İçe aktarma başarısız"
+  ,"csvExportCreated": "CSV oluşturuldu - kopyala"
+  ,"exportFailed": "Dışa aktarma başarısız"
+  ,"priceRuleFormat": "Fiyat {value} = {points} puan"
+  ,"@priceRuleFormat": {"placeholders": {"value": {"type": "String"}, "points": {"type": "int"}}}
+  ,"quantityRuleFormat": "Miktar {value} = {points} puan"
+  ,"@quantityRuleFormat": {"placeholders": {"value": {"type": "String"}, "points": {"type": "int"}}}
+  ,"operationRuleFormat": "İşlemler {value} = {points} puan"
+  ,"@operationRuleFormat": {"placeholders": {"value": {"type": "String"}, "points": {"type": "int"}}}
+  ,"pointsRuleFormat": "Puan: {points}"
+  ,"@pointsRuleFormat": {"placeholders": {"points": {"type": "int"}}}
+  ,"editPointsTooltip": "Puan düzenle"
+  ,"ruleValuePriceLabel": "Hedef fiyat"
+  ,"ruleValueQuantityLabel": "Hedef miktar"
+  ,"ruleValueOperationLabel": "İşlem sayısı"
+  ,"rulePointsLabel": "Puan"
+  ,"ruleExamplePrice": "Örn: 10 fiyat = 1 puan"
+  ,"ruleExampleQuantity": "Örn: 5 ad = 2 puan"
+  ,"ruleExampleOperation": "Örn: 1 iş = 3 puan"
+  ,"similarityFormat": "Benzerlik: {sim}"
+  ,"@similarityFormat": {"placeholders": {"sim": {"type": "String"}}}
+  ,"noOffersYet": "Henüz teklif yok"
+  ,"noMatchingResults": "Eşleşme yok"
+  ,"notSpecified": "Belirtilmemiş"
+  ,"storeNameUnavailable": "Mağaza adı yok"
+  ,"noTitle": "Başlıksız"
+  ,"noDescription": "Açıklama yok"
+  ,"deliveryAvailable": "Teslimat var"
+  ,"deliveryNotAvailable": "Teslimat yok"
+  ,"endsAtPrefix": "Bitiş:"
+  ,"activeLabel": "Aktif"
+  ,"manageCustomersTitle": "Müşterileri Yönet"
+  ,"loadingCustomers": "Müşteriler yükleniyor..."
+  ,"customersFetchError": "Müşteriler alınamadı"
+  ,"noCustomersYet": "Henüz müşteri yok"
+  ,"pointsLabel": "Puan: {points}"
+  ,"@pointsLabel": {"placeholders": {"points": {"type": "int"}}}
+  ,"customerDetailsTitle": "Müşteri Detayları"
+  ,"customerNotFound": "Müşteri bulunamadı"
+  ,"totalPoints": "Toplam puan: {points}"
+  ,"@totalPoints": {"placeholders": {"points": {"type": "int"}}}
+  ,"purchaseHistory": "Satın alma geçmişi"
+  ,"redeemedRewards": "Kullanılan ödüller"
+  ,"receiptsHistory": "Fiş geçmişi"
+  ,"customerOffers": "Müşteri teklifleri"
+  ,"noPurchasesYet": "Satın alma yok"
+  ,"noRewardsYet": "Ödül yok"
+  ,"noReceiptsYet": "Fiş yok"
+  ,"noOffersForCustomer": "Bu müşteri için teklif yok"
+  ,"orderNumber": "Sipariş #: {id}"
+  ,"@orderNumber": {"placeholders": {"id": {"type": "String"}}}
+  ,"invoiceNumber": "Fatura #: {id}"
+  ,"@invoiceNumber": {"placeholders": {"id": {"type": "String"}}}
+  ,"dateLabel": "Tarih: {date}"
+  ,"@dateLabel": {"placeholders": {"date": {"type": "String"}}}
+  ,"amountLabel": "Tutar: {amount}"
+  ,"@amountLabel": {"placeholders": {"amount": {"type": "String"}}}
+  ,"supportOffer": "Teklifi destekle"
+  ,"offerSupported": "Teklif desteklendi"
+  ,"customerReportsTitle": "Müşteri Raporları"
+  ,"unknownDate": "Bilinmeyen tarih"
+  ,"reportDate": "Rapor tarihi: {date}"
+  ,"@reportDate": {"placeholders": {"date": {"type": "String"}}}
+  ,"noMessage": "Mesaj yok"
+  ,"receiptsLogTitle": "Fiş geçmişi"
+  ,"statusPending": "İncelemede"
+  ,"statusAccepted": "Kabul"
+  ,"statusRejected": "Reddedildi"
+  ,"statusLabel": "Durum: {value}"
+  ,"@statusLabel": {"placeholders": {"value": {"type": "String"}}}
+  ,"invoiceNumberShort": "Fiş #: {num}"
+  ,"@invoiceNumberShort": {"placeholders": {"num": {"type": "String"}}}
+  ,"createdAtLabel": "Oluşturuldu: {date}"
+  ,"@createdAtLabel": {"placeholders": {"date": {"type": "String"}}}
+  ,"quantityPrice": "Adet: {qty} | Fiyat: {price}"
+  ,"@quantityPrice": {"placeholders": {"qty": {"type": "int"}, "price": {"type": "String"}}}
+  ,"noProductDetails": "Ürün detayı yok"
+  ,"noReceiptsYet": "Fiş yok"
+  ,"noActiveRewards": "Aktif ödül yok"
+  ,"noRedeemedRewards": "Kullanılan ödül yok"
+  ,"manageRewardsTitle": "Ödülleri Yönet"
+  ,"activeRewardsTab": "Aktif"
+  ,"redeemedRewardsTab": "Geçmiş"
+  ,"addNewReward": "Yeni ödül"
+  ,"syncRewards": "Ödülleri senkronize et"
+  ,"scanQrReward": "QR tara"
+  ,"syncingDone": "Senkronize edildi"
+  ,"syncFailed": "Sync başarısız"
+  ,"loginFirstSupabase": "Önce giriş yap (Supabase yok)"
+  ,"deleteRewardError": "Ödül silme başarısız"
+  ,"rewardNoTitle": "Başlıksız ödül"
+  ,"qrRewardTitle": "Ödül QR"
+  ,"closeLower": "Kapat"
+  ,"unknownDateShort": "Bilinmeyen tarih"
+  ,"rewardTitleLabel": "Ödül: {title}"
+  ,"@rewardTitleLabel": {"placeholders": {"title": {"type": "String"}}}
+  ,"customerLabel": "Müşteri: {name}"
+  ,"@customerLabel": {"placeholders": {"name": {"type": "String"}}}
+  ,"registerNewMerchantTitle": "Yeni Mağaza Kaydı"
+  ,"activityOtherPrompt": "Diğer faaliyeti belirt"
+  ,"pickStoreOnMap": "Haritada konumu seç"
+  ,"storeLocationPicked": "Konum seçildi"
+  ,"autoLocating": "Konum alınıyor..."
+  ,"autoLocateButton": "Oto konum"
+  ,"submitRegister": "Kayıt ol"
+  ,"locationServiceDisabled": "Konum servisi kapalı"
+  ,"locationPermissionDenied": "Konum izni reddedildi"
+  ,"locationPermissionDeniedForever": "Konum izni kalıcı reddedildi. Ayarları açın."
+  ,"locationAutoCaptured": "Konum otomatik alındı"
+  ,"locationFailed": "Konum alınamadı: {error}"
+  ,"@locationFailed": {"placeholders": {"error": {"type": "String"}}}
+  ,"completeProfileTitle": "Profili Tamamla"
+  ,"mustLoginFirst": "Önce giriş yapmalısın"
+  ,"profileSavedSuccess": "Profil başarıyla kaydedildi!"
+  ,"genericErrorWithMessage": "Hata: {message}"
+  ,"@genericErrorWithMessage": {"placeholders": {"message": {"type": "String"}}}
+  ,"requiredField": "Zorunlu alan"
+  ,"save": "Kaydet"
+  ,"pointsSystemTitle": "Puan Sistemi"
+  ,"pointsMechanismTitle": "Hesaplama Mekanizması"
+  ,"pointsSimplifiedDescription": "Basitleştirilmiş sistem: toplam puan = toplam(ürün puanı × fişteki miktar). Şimdilik ek ayar yok."
+  ,"pointsSimplificationBenefitsTitle": "Basitleştirmenin Faydaları:" 
+  ,"pointsSimplificationBenefitsBullet": "• Daha hızlı performans & anlaşılır\n• Özel durum karmaşıklığını önler\n• Ürün puanı değişimi anında etkili geriye dönük etki yok (manuel hariç)"
+  ,"addOfferTitle": "Yeni teklif"
+  ,"offerImagePlaceholderOptional": "Teklif resmi (opsiyonel)"
+  ,"pickFromGallery": "Galeriden"
+  ,"captureWithCamera": "Kamera ile"
+  ,"imageOptionalNote": "Resim boş bırakılabilir veya yeni seçilebilir/çekilebilir."
+  ,"offerTitleLabel": "Teklif başlığı"
+  ,"offerDescriptionLabel": "Teklif açıklaması"
+  ,"originalPriceLabel": "Orijinal fiyat"
+  ,"discountPercentageLabel": "İndirim (%)"
+  ,"discountPercentageInvalid": "1-99 arası girin"
+  ,"startDateLabel": "Başlangıç tarihi"
+  ,"endDateLabel": "Bitiş tarihi"
+  ,"chooseGeneric": "Seç"
+  ,"pickOfferLocation": "Haritada teklif konumu seç"
+  ,"offerLocationPicked": "Konum seçildi"
+  ,"offerTypeLabel": "Teklif türü"
+  ,"offerTypeDiscount": "Doğrudan indirim"
+  ,"offerTypeGift": "Alışverişe hediye"
+  ,"offerTypeCoupon": "Kupon"
+  ,"offerTypeLimitedTime": "Süreli teklif"
+  ,"offerTypeOther": "Diğer..."
+  ,"selectStartEndDates": "Lütfen başlangıç ve bitiş tarihlerini seçin"
+  ,"offerLocationRequired": "Lütfen teklif konumunu seçin"
+  ,"offerTypeRequired": "Lütfen teklif türünü seçin"
+  ,"offerAddedSynced": "Teklif eklendi & senkron"
+  ,"offerUpdatedSynced": "Teklif güncellendi & senkron"
+  ,"imagePickFailed": "Resim seçilemedi: {error}"
+  ,"@imagePickFailed": {"placeholders": {"error": {"type": "String"}}}
+  ,"savedWithSupabaseWarning": "Kaydedildi (Supabase uyarısı: {error})"
+  ,"@savedWithSupabaseWarning": {"placeholders": {"error": {"type": "String"}}}
+  ,"offerEndsAt": "Biter: {date}"
+  ,"@offerEndsAt": {"placeholders": {"date": {"type": "String"}}}
+  ,"active": "Aktif"
+  ,"storeNameNotAvailable": "Mağaza adı mevcut değil"
+ }

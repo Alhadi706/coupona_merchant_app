@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class MerchantAnalyticsScreen extends StatelessWidget {
   const MerchantAnalyticsScreen({super.key});
@@ -7,27 +8,29 @@ class MerchantAnalyticsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // قائمة بجميع وظائف لوحة التحكم
+    final loc = AppLocalizations.of(context);
     final List<Map<String, dynamic>> dashboardItems = [
       {
         'icon': Icons.local_offer,
-        'label': 'إدارة العروض',
+        'label': loc?.offers ?? 'Offers',
         'path': '/dashboard/offers'
       },
       {
         'icon': Icons.shopping_bag,
-        'label': 'إدارة المنتجات',
+        'label': loc?.products ?? 'Products',
         'path': '/dashboard/products'
       },
       {
         'icon': Icons.people,
-        'label': 'عرض الزبائن',
+        'label': loc?.customers ?? 'Customers',
         'path': '/dashboard/customers'
       },
       {
         'icon': Icons.receipt,
-        'label': 'عرض الإيصالات',
+        'label': loc?.receipts ?? 'Receipts',
         'path': '/dashboard/receipts'
       },
+      // Additional features (not yet localized keys created): keep Arabic fallback or add new keys later.
       {
         'icon': Icons.point_of_sale,
         'label': 'شاشة الكاشير',
@@ -50,7 +53,7 @@ class MerchantAnalyticsScreen extends StatelessWidget {
       },
       {
         'icon': Icons.settings,
-        'label': 'الإعدادات',
+        'label': loc?.settings ?? 'Settings',
         'path': '/dashboard/settings'
       },
     ];

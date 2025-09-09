@@ -6,6 +6,7 @@ import 'package:intl/intl.dart'; // لاستخدامه في تنسيق التا�
 import 'package:coupona_merchant/screens/add_edit_reward_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart'; // لاستخدام context.push
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class MerchantRewardsScreen extends StatefulWidget {
   const MerchantRewardsScreen({Key? key}) : super(key: key);
@@ -93,17 +94,18 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ أثناء حذف الجائزة: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context)?.deleteRewardError ?? 'Delete failed'}: $e')),
         );
       }
     }
   }
 
   void _showQrDialog(Map<String, dynamic> reward) {
+    final loc = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('QR لاستلام الجائزة'),
+        title: Text(loc?.qrRewardTitle ?? 'Reward QR'),
         content: SizedBox(
           width: 200,
           height: 200,
@@ -115,7 +117,7 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق')),
+              onPressed: () => Navigator.pop(ctx), child: Text(loc?.closeLower ?? 'Close')),
         ],
       ),
     );
@@ -123,21 +125,22 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('إدارة الجوائز'),
-          bottom: const TabBar(
+          title: Text(loc?.manageRewardsTitle ?? 'Rewards'),
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'الجوائز المفعلة'),
-              Tab(text: 'سجل الاستبدال'),
+              Tab(text: loc?.activeRewardsTab ?? 'Active'),
+              Tab(text: loc?.redeemedRewardsTab ?? 'History'),
             ],
           ),
           actions: [
             IconButton(
               icon: const Icon(Icons.add),
-              tooltip: 'إضافة جائزة جديدة',
+              tooltip: loc?.addNewReward ?? 'Add',
               onPressed: () async {
                 final result = await Navigator.push(
                   context,
@@ -152,11 +155,11 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.sync),
-              tooltip: 'مزامنة جوائز Firestore مع Supabase',
+              tooltip: loc?.syncRewards ?? 'Sync',
               onPressed: () async {
                 final supaUser = Supabase.instance.client.auth.currentUser;
                 if (supaUser == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('سجّل الدخول أولاً (جلسة Supabase غير موجودة)')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.loginFirstSupabase ?? 'Login first')));
                   return;
                 }
                 // جلب من Firestore ورفع إلى Supabase
@@ -184,26 +187,26 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
                     }, onConflict: 'id');
                   }
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت المزامنة')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.syncingDone ?? 'Synced')));
                   }
                   _fetchData();
                 } catch (e) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل المزامنة: $e')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${loc?.syncFailed ?? 'Sync failed'}: $e')));
                   }
                 }
               },
             ),
             IconButton(
               icon: const Icon(Icons.qr_code_scanner),
-              tooltip: 'مسح QR لاسترداد جائزة',
+              tooltip: loc?.scanQrReward ?? 'Scan QR',
               onPressed: () {
                 // استخدام GoRouter بدلاً من Navigator.pushNamed لتفادي خطأ onGenerateRoute
                 if (mounted) {
                   try {
                     context.push('/dashboard/rewards/scan');
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر فتح شاشة المسح: $e')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${loc?.syncFailed ?? 'Error'}: $e')));
                   }
                 }
               },
@@ -225,8 +228,9 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
   }
 
   Widget _buildRewardsList() {
+    final loc = AppLocalizations.of(context);
     if (rewards.isEmpty) {
-      return const Center(child: Text('لا توجد جوائز مفعلة حاليًا.'));
+      return Center(child: Text(loc?.noActiveRewards ?? 'No active rewards'));
     }
     return ListView.builder(
       itemCount: rewards.length,
@@ -238,7 +242,7 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
             leading: CircleAvatar(
               child: Text(data['pointsCost']?.toString() ?? '0'),
             ),
-            title: Text(data['title'] ?? 'جائزة بدون عنوان'),
+            title: Text(data['title'] ?? (loc?.rewardNoTitle ?? 'Untitled reward')),
             subtitle: Text(data['description'] ?? ''),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -274,15 +278,16 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
   }
 
   Widget _buildRedeemedList() {
+    final loc = AppLocalizations.of(context);
     if (redeemed.isEmpty) {
-      return const Center(child: Text('لا توجد جوائز تم استبدالها.'));
+      return Center(child: Text(loc?.noRedeemedRewards ?? 'No redeemed rewards'));
     }
     return ListView.builder(
       itemCount: redeemed.length,
       itemBuilder: (context, i) {
         final data = redeemed[i];
         final redeemedAt = data['redeemedAt'];
-        String formattedDate = 'تاريخ غير معروف';
+        String formattedDate = loc?.unknownDateShort ?? 'Unknown date';
         if (redeemedAt is String) {
           try {
             final parsedDate = DateTime.parse(redeemedAt);
@@ -297,8 +302,8 @@ class _MerchantRewardsScreenState extends State<MerchantRewardsScreen> {
 
         return ListTile(
           leading: const Icon(Icons.check_circle, color: Colors.green),
-          title: Text('جائزة: ${data['rewardTitle'] ?? 'غير معروف'}'),
-          subtitle: Text('زبون: ${data['customerName'] ?? 'غير معروف'}'),
+          title: Text(loc?.rewardTitleLabel(data['rewardTitle'] ?? (loc?.rewardNoTitle ?? 'Untitled')) ?? ''),
+          subtitle: Text(loc?.customerLabel(data['customerName'] ?? '-') ?? ''),
           trailing: Text(formattedDate),
         );
       },

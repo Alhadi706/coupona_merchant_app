@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class CustomerDetailsScreen extends StatelessWidget {
   final String customerId;
@@ -8,9 +9,10 @@ class CustomerDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('تفاصيل الزبون'),
+        title: Text(loc?.customerDetailsTitle ?? 'Customer Details'),
         backgroundColor: Colors.deepPurple,
       ),
       body: FutureBuilder<DocumentSnapshot>(
@@ -21,7 +23,7 @@ class CustomerDetailsScreen extends StatelessWidget {
           }
           final data = snapshot.data!.data() as Map<String, dynamic>?;
           if (data == null) {
-            return const Center(child: Text('الزبون غير موجود'));
+            return Center(child: Text(loc?.customerNotFound ?? 'Not found'));
           }
           final name = data['name'] ?? '';
           final points = data['points'] ?? 0;
@@ -31,19 +33,19 @@ class CustomerDetailsScreen extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.person, color: Colors.deepPurple),
                 title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                subtitle: Text('مجموع النقاط: $points'),
+                subtitle: Text(loc?.totalPoints(points) ?? 'Total points: $points'),
               ),
               const SizedBox(height: 16),
-              const Text('تاريخه الشرائي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(loc?.purchaseHistory ?? 'Purchases', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               _CustomerOrders(customerId: customerId),
               const SizedBox(height: 24),
-              const Text('الجوائز المستلمة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(loc?.redeemedRewards ?? 'Rewards', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               _CustomerRewards(customerId: customerId),
               const SizedBox(height: 24),
-              const Text('سجل الفواتير', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(loc?.receiptsHistory ?? 'Receipts', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               _CustomerReceipts(customerId: customerId),
               const SizedBox(height: 24),
-              const Text('عروض الزبون', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(loc?.customerOffers ?? 'Offers', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               _CustomerOffers(customerId: customerId),
             ],
           );
@@ -71,15 +73,17 @@ class _CustomerOrders extends StatelessWidget {
         }
         final orders = snapshot.data!.docs;
         if (orders.isEmpty) {
-          return const Text('لا يوجد مشتريات بعد');
+          return Text(loc?.noPurchasesYet ?? 'No purchases');
         }
         return Column(
           children: orders.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             return ListTile(
               leading: const Icon(Icons.shopping_cart, color: Colors.green),
-              title: Text('طلب رقم: ${doc.id}'),
-              subtitle: Text('التاريخ: ${(data['created_at'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-'}\nالمبلغ: ${data['total'] ?? '-'}'),
+              title: Text(AppLocalizations.of(context)?.orderNumber(doc.id) ?? 'Order #: ${doc.id}'),
+              subtitle: Text(
+                '${AppLocalizations.of(context)?.dateLabel((data['created_at'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-')}\n${AppLocalizations.of(context)?.amountLabel((data['total'] ?? '-').toString())}',
+              ),
             );
           }).toList(),
         );
@@ -106,7 +110,7 @@ class _CustomerRewards extends StatelessWidget {
         }
         final rewards = snapshot.data!.docs;
         if (rewards.isEmpty) {
-          return const Text('لا يوجد جوائز مستلمة');
+      return Text(loc?.noRewardsYet ?? 'No rewards');
         }
         return Column(
           children: rewards.map((doc) {
@@ -114,7 +118,7 @@ class _CustomerRewards extends StatelessWidget {
             return ListTile(
               leading: const Icon(Icons.card_giftcard, color: Colors.purple),
               title: Text(data['rewardName'] ?? ''),
-              subtitle: Text('التاريخ: ${(data['redeemedAt'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-'}'),
+        subtitle: Text(AppLocalizations.of(context)?.dateLabel((data['redeemedAt'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-') ?? ''),
             );
           }).toList(),
         );
@@ -141,15 +145,17 @@ class _CustomerReceipts extends StatelessWidget {
         }
         final receipts = snapshot.data!.docs;
         if (receipts.isEmpty) {
-          return const Text('لا يوجد فواتير بعد');
+          return Text(loc?.noReceiptsYet ?? 'No receipts');
         }
         return Column(
           children: receipts.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             return ListTile(
               leading: const Icon(Icons.receipt_long, color: Colors.orange),
-              title: Text('فاتورة رقم: ${doc.id}'),
-              subtitle: Text('التاريخ: ${(data['createdAt'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-'}\nالمبلغ: ${data['total'] ?? '-'}'),
+              title: Text(AppLocalizations.of(context)?.invoiceNumber(doc.id) ?? 'Invoice #: ${doc.id}'),
+              subtitle: Text(
+                '${AppLocalizations.of(context)?.dateLabel((data['createdAt'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-')}\n${AppLocalizations.of(context)?.amountLabel((data['total'] ?? '-').toString())}',
+              ),
             );
           }).toList(),
         );
@@ -175,7 +181,7 @@ class _CustomerOffers extends StatelessWidget {
         }
         final offers = snapshot.data ?? [];
         if (offers.isEmpty) {
-          return const Text('لا يوجد عروض لهذا الزبون');
+          return Text(loc?.noOffersForCustomer ?? 'No offers');
         }
         return Column(
           children: offers.map((offer) {
@@ -184,14 +190,14 @@ class _CustomerOffers extends StatelessWidget {
                 leading: offer['image_url'] != null
                     ? Image.network(offer['image_url'], width: 40, height: 40, fit: BoxFit.cover)
                     : const Icon(Icons.local_offer, color: Colors.blue),
-                title: Text(offer['title'] ?? 'بدون عنوان'),
+                title: Text(offer['title'] ?? (loc?.noTitle ?? 'No title')),
                 subtitle: Text(offer['description'] ?? ''),
                 trailing: ElevatedButton.icon(
                   icon: const Icon(Icons.thumb_up),
-                  label: const Text('دعم العرض'),
+                  label: Text(loc?.supportOffer ?? 'Support'),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم دعم العرض!')),
+                      SnackBar(content: Text(loc?.offerSupported ?? 'Supported')),
                     );
                     // هنا يمكنك إضافة منطق دعم العرض في Supabase إذا رغبت
                   },

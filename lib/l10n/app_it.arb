@@ -1,0 +1,263 @@
+{
+  "appTitle": "App Commerciante",
+  "login": "Accesso",
+  "logout": "Disconnetti",
+  "settings": "Impostazioni",
+  "language": "Lingua",
+  "noMerchantCode": "Nessun codice",
+  "copied": "Copiato",
+  "merchantCode": "Codice Commerciante",
+  "home": "Home",
+  "offers": "Offerte",
+  "customers": "Clienti",
+  "products": "Prodotti",
+  "receipts": "Ricevute",
+  "copiedMerchantCode": "Codice commerciante copiato",
+  "close": "Chiudi",
+  "merchantLoginTitle": "Accesso Commerciante",
+  "enterEmailPassword": "Inserisci email e password",
+  "loginFailed": "Accesso fallito",
+  "loginButton": "Accesso",
+  "createMerchantAccount": "Crea nuovo account",
+  "forgotPassword": "Password dimenticata?",
+  "sendResetLink": "Link reset verrà inviato",
+  "supabaseSessionFailed": "Impossibile creare sessione Supabase",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "registerTitle": "Registrazione Commerciante",
+  "fillAllFields": "Compila tutti i campi richiesti",
+  "passwordsNotMatch": "Le password non coincidono",
+  "invalidEmail": "Email non valida",
+  "pickStoreLocation": "Seleziona posizione negozio",
+  "emailAlreadyUsed": "Email già registrata, fai login.",
+  "accountCreatedSuccess": "Account creato con successo!",
+  "accountCreateFailed": "Creazione account fallita",
+  "unexpectedError": "Errore inatteso",
+  "confirmPasswordLabel": "Conferma Password",
+  "storeNameLabel": "Nome Negozio",
+  "phoneLabel": "Telefono",
+  "activityTypeLabel": "Tipo Attività",
+  "otherActivityLabel": "Altro",
+  "locationLabel": "Posizione",
+  "registerButton": "Registrati",
+  "selectLocationButton": "Seleziona posizione",
+  "getAutoLocationButton": "Localizza automaticamente",
+  "locatingMessage": "Localizzazione...",
+  "manageOffersTitle": "Gestisci Offerte",
+  "addNewOffer": "Nuova offerta",
+  "migrateOldOffers": "Migra offerte vecchie",
+  "offerIdMissing": "ID offerta mancante!",
+  "offerDeleted": "Offerta eliminata.",
+  "offerDeleteFailed": "Eliminazione offerta fallita",
+  "offerStatusChanged": "Stato offerta cambiato.",
+  "offerStatusChangeFailed": "Cambio stato fallito",
+  "autoMigrationFailed": "Migrazione automatica fallita",
+  "offersMigratedCount": "Migrati {count} offerte da Firestore",
+  "@offersMigratedCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"productsScreenTitle": "Prodotti del negozio"
+  ,"importCsv": "Importa CSV"
+  ,"csvTemplate": "Modello"
+  ,"exportCsv": "Esporta CSV"
+  ,"refresh": "Aggiorna"
+  ,"searchHintProducts": "Ricerca rapida / fuzzy nome..."
+  ,"debugProductsBanner": "[DEBUG] Schermata prodotti"
+  ,"noProductsYet": "Nessun prodotto ancora"
+  ,"addProductManual": "Aggiungi manuale"
+  ,"addProduct": "Aggiungi"
+  ,"addProductTitle": "Nuovo prodotto"
+  ,"productNameLabel": "Nome prodotto"
+  ,"productPointsLabel": "Punti prodotto"
+  ,"basisSelectionLabel": "Punti basati su:"
+  ,"basisProductDirect": "Prodotto diretto"
+  ,"basisPrice": "Prezzo"
+  ,"basisQuantity": "Quantità"
+  ,"basisOperation": "Operazione acquisto"
+  ,"cancel": "Annulla"
+  ,"supabaseSessionMissing": "Sessione Supabase assente"
+  ,"productAdded": "Prodotto aggiunto"
+  ,"productAddFailed": "Aggiunta fallita"
+  ,"editProductTitle": "Modifica prodotto"
+  ,"productNameImmutable": "Nome (fisso)"
+  ,"productUpdated": "Aggiornato"
+  ,"productUpdateFailed": "Aggiornamento fallito"
+  ,"emptyResults": "Nessun risultato"
+  ,"clear": "Pulisci"
+  ,"searchResultsCount": "Risultati: {count}"
+  ,"@searchResultsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"tableMissingTitle": "Tabella mancante"
+  ,"tableMissingMessage": "Crea tabella merchant_products in Supabase e riapri."
+  ,"recheck": "Ricontrolla"
+  ,"csvFileEmpty": "File vuoto"
+  ,"missingName": "Nome mancante"
+  ,"invalidPoints": "Punti non validi"
+  ,"noProcessableRows": "Nessuna riga elaborabile"
+  ,"parseFailed": "Parsing fallito"
+  ,"importReviewTitle": "Revisione import"
+  ,"validInvalidCount": "Validi: {valid} | Errori: {invalid}"
+  ,"@validInvalidCount": {"placeholders": {"valid": {"type": "int"}, "invalid": {"type": "int"}}}
+  ,"skipDuplicateProducts": "Salta nomi duplicati"
+  ,"importingEllipsis": "Importazione..."
+  ,"importProductsButton": "Importa {count}"
+  ,"@importProductsButton": {"placeholders": {"count": {"type": "int"}}}
+  ,"sessionMissing": "Sessione mancante"
+  ,"noNewItemsAfterDuplicates": "Nessun nuovo dopo duplicati"
+  ,"insertedProductsResult": "Inseriti {inserted} (Respinti {rejected})"
+  ,"@insertedProductsResult": {"placeholders": {"inserted": {"type": "int"}, "rejected": {"type": "int"}}}
+  ,"importFailed": "Import fallito"
+  ,"csvExportCreated": "CSV creato - copia"
+  ,"exportFailed": "Export fallito"
+  ,"priceRuleFormat": "Prezzo {value} = {points} pt"
+  ,"@priceRuleFormat": {"placeholders": {"value": {"type": "String"}, "points": {"type": "int"}}}
+  ,"quantityRuleFormat": "Quantità {value} = {points} pt"
+  ,"@quantityRuleFormat": {"placeholders": {"value": {"type": "String"}, "points": {"type": "int"}}}
+  ,"operationRuleFormat": "Operazioni {value} = {points} pt"
+  ,"@operationRuleFormat": {"placeholders": {"value": {"type": "String"}, "points": {"type": "int"}}}
+  ,"pointsRuleFormat": "Punti: {points}"
+  ,"@pointsRuleFormat": {"placeholders": {"points": {"type": "int"}}}
+  ,"editPointsTooltip": "Modifica punti"
+  ,"ruleValuePriceLabel": "Prezzo target"
+  ,"ruleValueQuantityLabel": "Quantità target"
+  ,"ruleValueOperationLabel": "N° operazioni"
+  ,"rulePointsLabel": "Punti"
+  ,"ruleExamplePrice": "Es: 10 prezzo = 1 pt"
+  ,"ruleExampleQuantity": "Es: 5 pz = 2 pt"
+  ,"ruleExampleOperation": "Es: 1 op = 3 pt"
+  ,"similarityFormat": "Somiglianza: {sim}"
+  ,"@similarityFormat": {"placeholders": {"sim": {"type": "String"}}}
+  ,"noOffersYet": "Ancora nessuna offerta"
+  ,"noMatchingResults": "Nessuna corrispondenza"
+  ,"notSpecified": "Non specificato"
+  ,"storeNameUnavailable": "Nome negozio non disp."
+  ,"noTitle": "Senza titolo"
+  ,"noDescription": "Nessuna descrizione"
+  ,"deliveryAvailable": "Consegna disponibile"
+  ,"deliveryNotAvailable": "Consegna non disponibile"
+  ,"endsAtPrefix": "Termina il:"
+  ,"activeLabel": "Attivo"
+  ,"manageCustomersTitle": "Gestisci clienti"
+  ,"loadingCustomers": "Caricamento clienti..."
+  ,"customersFetchError": "Errore caricamento clienti"
+  ,"noCustomersYet": "Nessun cliente ancora"
+  ,"pointsLabel": "Punti: {points}"
+  ,"@pointsLabel": {"placeholders": {"points": {"type": "int"}}}
+  ,"customerDetailsTitle": "Dettagli cliente"
+  ,"customerNotFound": "Cliente non trovato"
+  ,"totalPoints": "Punti totali: {points}"
+  ,"@totalPoints": {"placeholders": {"points": {"type": "int"}}}
+  ,"purchaseHistory": "Storico acquisti"
+  ,"redeemedRewards": "Premi riscattati"
+  ,"receiptsHistory": "Storico ricevute"
+  ,"customerOffers": "Offerte cliente"
+  ,"noPurchasesYet": "Nessun acquisto"
+  ,"noRewardsYet": "Nessun premio"
+  ,"noReceiptsYet": "Nessuna ricevuta"
+  ,"noOffersForCustomer": "Nessuna offerta per questo cliente"
+  ,"orderNumber": "Ordine #: {id}"
+  ,"@orderNumber": {"placeholders": {"id": {"type": "String"}}}
+  ,"invoiceNumber": "Fattura #: {id}"
+  ,"@invoiceNumber": {"placeholders": {"id": {"type": "String"}}}
+  ,"dateLabel": "Data: {date}"
+  ,"@dateLabel": {"placeholders": {"date": {"type": "String"}}}
+  ,"amountLabel": "Importo: {amount}"
+  ,"@amountLabel": {"placeholders": {"amount": {"type": "String"}}}
+  ,"supportOffer": "Supporta offerta"
+  ,"offerSupported": "Offerta supportata"
+  ,"customerReportsTitle": "Segnalazioni clienti"
+  ,"unknownDate": "Data sconosciuta"
+  ,"reportDate": "Data segnalazione: {date}"
+  ,"@reportDate": {"placeholders": {"date": {"type": "String"}}}
+  ,"noMessage": "Nessun messaggio"
+  ,"receiptsLogTitle": "Storico ricevute"
+  ,"statusPending": "In revisione"
+  ,"statusAccepted": "Accettata"
+  ,"statusRejected": "Rifiutata"
+  ,"statusLabel": "Stato: {value}"
+  ,"@statusLabel": {"placeholders": {"value": {"type": "String"}}}
+  ,"invoiceNumberShort": "Ricevuta #: {num}"
+  ,"@invoiceNumberShort": {"placeholders": {"num": {"type": "String"}}}
+  ,"createdAtLabel": "Creato: {date}"
+  ,"@createdAtLabel": {"placeholders": {"date": {"type": "String"}}}
+  ,"quantityPrice": "Qtà: {qty} | Prezzo: {price}"
+  ,"@quantityPrice": {"placeholders": {"qty": {"type": "int"}, "price": {"type": "String"}}}
+  ,"noProductDetails": "Nessun dettaglio prodotto"
+  ,"noReceiptsYet": "Nessuna ricevuta"
+  ,"noActiveRewards": "Nessun premio attivo"
+  ,"noRedeemedRewards": "Nessun premio riscattato"
+  ,"manageRewardsTitle": "Gestisci premi"
+  ,"activeRewardsTab": "Attivi"
+  ,"redeemedRewardsTab": "Storico"
+  ,"addNewReward": "Nuovo premio"
+  ,"syncRewards": "Sincronizza premi"
+  ,"scanQrReward": "Scansiona QR"
+  ,"syncingDone": "Sincronizzato"
+  ,"syncFailed": "Sync fallito"
+  ,"loginFirstSupabase": "Fai login (sessione Supabase assente)"
+  ,"deleteRewardError": "Eliminazione premio fallita"
+  ,"rewardNoTitle": "Senza titolo"
+  ,"qrRewardTitle": "QR premio"
+  ,"closeLower": "Chiudi"
+  ,"unknownDateShort": "Data sconosciuta"
+  ,"rewardTitleLabel": "Premio: {title}"
+  ,"@rewardTitleLabel": {"placeholders": {"title": {"type": "String"}}}
+  ,"customerLabel": "Cliente: {name}"
+  ,"@customerLabel": {"placeholders": {"name": {"type": "String"}}}
+  ,"registerNewMerchantTitle": "Registrazione nuovo commerciante"
+  ,"activityOtherPrompt": "Specifica altra attività"
+  ,"pickStoreOnMap": "Seleziona posizione su mappa"
+  ,"storeLocationPicked": "Posizione selezionata"
+  ,"autoLocating": "Localizzazione..."
+  ,"autoLocateButton": "Localizza auto"
+  ,"submitRegister": "Registrati"
+  ,"locationServiceDisabled": "Servizio localizzazione disattivato"
+  ,"locationPermissionDenied": "Permesso localizzazione negato"
+  ,"locationPermissionDeniedForever": "Permesso localizzazione negato permanentemente. Apri impostazioni."
+  ,"locationAutoCaptured": "Posizione catturata automaticamente"
+  ,"locationFailed": "Localizzazione fallita: {error}"
+  ,"@locationFailed": {"placeholders": {"error": {"type": "String"}}}
+  ,"completeProfileTitle": "Completa Profilo"
+  ,"mustLoginFirst": "Devi prima accedere"
+  ,"profileSavedSuccess": "Profilo salvato con successo!"
+  ,"genericErrorWithMessage": "Errore: {message}"
+  ,"@genericErrorWithMessage": {"placeholders": {"message": {"type": "String"}}}
+  ,"requiredField": "Campo obbligatorio"
+  ,"save": "Salva"
+  ,"pointsSystemTitle": "Sistema punti"
+  ,"pointsMechanismTitle": "Meccanismo di calcolo"
+  ,"pointsSimplifiedDescription": "Sistema semplificato: punti totali = somma(punti assegnati × quantità nel ricevuta). Nessuna altra impostazione ora."
+  ,"pointsSimplificationBenefitsTitle": "Vantaggi semplificazione:" 
+  ,"pointsSimplificationBenefitsBullet": "• Performance più veloce e facile da capire\n• Evita complessità casi speciali\n• Cambio punti prodotto immediato senza effetto retroattivo salvo manuale"
+  ,"addOfferTitle": "Nuova offerta"
+  ,"offerImagePlaceholderOptional": "Immagine offerta (opzionale)"
+  ,"pickFromGallery": "Dalla galleria"
+  ,"captureWithCamera": "Scatta foto"
+  ,"imageOptionalNote": "L'immagine può restare vuota oppure sceglierne/scattarne una."
+  ,"offerTitleLabel": "Titolo offerta"
+  ,"offerDescriptionLabel": "Descrizione offerta"
+  ,"originalPriceLabel": "Prezzo originale"
+  ,"discountPercentageLabel": "Sconto (%)"
+  ,"discountPercentageInvalid": "Inserisci percentuale 1-99"
+  ,"startDateLabel": "Data inizio"
+  ,"endDateLabel": "Data fine"
+  ,"chooseGeneric": "Scegli"
+  ,"pickOfferLocation": "Seleziona posizione su mappa"
+  ,"offerLocationPicked": "Posizione selezionata"
+  ,"offerTypeLabel": "Tipo offerta"
+  ,"offerTypeDiscount": "Sconto diretto"
+  ,"offerTypeGift": "Regalo con acquisto"
+  ,"offerTypeCoupon": "Coupon"
+  ,"offerTypeLimitedTime": "Offerta a tempo"
+  ,"offerTypeOther": "Altro..."
+  ,"selectStartEndDates": "Seleziona date inizio e fine"
+  ,"offerLocationRequired": "Seleziona posizione offerta"
+  ,"offerTypeRequired": "Seleziona tipo offerta"
+  ,"offerAddedSynced": "Offerta aggiunta e sincronizzata"
+  ,"offerUpdatedSynced": "Offerta aggiornata e sincronizzata"
+  ,"imagePickFailed": "Immagine non selezionata: {error}"
+  ,"@imagePickFailed": {"placeholders": {"error": {"type": "String"}}}
+  ,"savedWithSupabaseWarning": "Salvato (avviso sync Supabase: {error})"
+  ,"@savedWithSupabaseWarning": {"placeholders": {"error": {"type": "String"}}}
+  ,"offerEndsAt": "Termina il: {date}"
+  ,"@offerEndsAt": {"placeholders": {"date": {"type": "String"}}}
+  ,"active": "Attivo"
+  ,"storeNameNotAvailable": "Nome negozio non disponibile"
+ }

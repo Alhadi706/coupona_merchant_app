@@ -55,6 +55,7 @@ dependencies:
   mobile_scanner: ^5.0.0 # للماسح على أندرويد/iOS فقط (الإدخال اليدوي يستعمل على الويب)
   file_picker: ^8.0.0
   csv: ^6.0.0
+  geolocator: ^10.1.0
 
   flutter_localizations:
     sdk: flutter
@@ -81,6 +82,7 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   assets:

@@ -30,9 +30,9 @@ class PointsService {
         'id': 'temp-${DateTime.now().millisecondsSinceEpoch}',
         'merchant_id': merchantId,
         'mode': 'per_product',
-        'amount_per_point': null,
-        'quantity_per_point': null,
-        'points_per_invoice': null,
+  'amount_per_point': null,
+  'quantity_per_point': null,
+  'points_per_invoice': null,
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
@@ -51,35 +51,16 @@ class PointsService {
   }
 
   static Future<PointsScheme> updateScheme(String merchantId, PointsScheme draft) async {
+    // حالياً لا يوجد شيء لتحديثه سوى الطابع الزمني أو مستقبلًا حقول أخرى
     final resp = await _client
         .from('merchant_point_scheme')
         .update(draft.toUpdate())
         .eq('merchant_id', merchantId)
         .select()
         .maybeSingle();
-    if (resp == null) {
-      // If update returned nothing (rare), just return draft with new updatedAt.
-      return draft;
-    }
+    if (resp == null) return draft;
     return PointsScheme.fromMap(Map<String, dynamic>.from(resp as Map));
   }
 
-  static int computePoints(PointsScheme scheme, {double amount = 0, int totalQuantity = 0, int productPointsSum = 0, int invoiceCount = 1}) {
-    switch (scheme.mode) {
-      case 'per_amount':
-        final per = scheme.amountPerPoint ?? 0;
-        if (per <= 0) return 0;
-        return (amount / per).floor();
-      case 'per_quantity':
-        final q = scheme.quantityPerPoint ?? 0;
-        if (q <= 0) return 0;
-        return (totalQuantity / q).floor();
-      case 'per_invoice':
-        final p = scheme.pointsPerInvoice ?? 0;
-        return p * invoiceCount;
-      case 'per_product':
-      default:
-        return productPointsSum;
-    }
-  }
+  static int computePerProductSum(int productPointsSum) => productPointsSum; // تبسيط
 }

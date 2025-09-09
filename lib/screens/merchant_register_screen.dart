@@ -6,7 +6,10 @@ import 'package:latlong2/latlong.dart';
 import 'pick_location_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
+import '../services/session_guard.dart';
 import 'package:collection/collection.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:coupona_merchant/l10n/app_localizations.dart';
 
 class MerchantRegisterScreen extends StatefulWidget {
   const MerchantRegisterScreen({Key? key}) : super(key: key);
@@ -16,6 +19,7 @@ class MerchantRegisterScreen extends StatefulWidget {
 }
 
 class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
+  AppLocalizations? get loc => AppLocalizations.of(context);
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
@@ -23,26 +27,17 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
   final TextEditingController _storeNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final List<String> activityTypes = [
-    'مقهى',
-    'مطعم',
-    'متجر ملابس',
-    'صيدلية',
-    'سوبرماركت',
-    'أخرى...'
+    'Cafe','Restaurant','Clothing Store','Pharmacy','Supermarket','Other'
   ];
-  String selectedActivity = 'مقهى';
+  String selectedActivity = 'Cafe';
   bool useOtherActivity = false;
   bool _loading = false;
   LatLng? pickedLocation;
+  bool _gettingLocation = false;
 
   // خريطة رموز النشاط بالإنجليزي
   final Map<String, String> activityTypeCodes = {
-    'مقهى': 'CF',
-    'مطعم': 'TR',
-    'متجر ملابس': 'CL',
-    'صيدلية': 'PH',
-    'سوبرماركت': 'SM',
-    'أخرى...': 'OT',
+    'Cafe': 'CF', 'Restaurant': 'TR', 'Clothing Store': 'CL', 'Pharmacy': 'PH', 'Supermarket': 'SM', 'Other': 'OT'
   };
 
   Future<void> _register() async {
@@ -55,34 +50,30 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
     final activityType = useOtherActivity ? _activityTypeOtherController.text.trim() : selectedActivity;
 
     if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty || storeName.isEmpty || activityType.isEmpty || phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تعبئة جميع الحقول المطلوبة')),
-      );
+  final loc = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.fillAllFields ?? 'Fill all fields')));
       setState(() => _loading = false);
       return;
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('كلمتا المرور غير متطابقتين')),
-      );
+  final loc = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.passwordsNotMatch ?? 'Passwords do not match')));
       setState(() => _loading = false);
       return;
     }
 
     final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$');
     if (!emailRegex.hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى إدخال بريد إلكتروني صحيح')),
-      );
+  final loc = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.invalidEmail ?? 'Invalid email')));
       setState(() => _loading = false);
       return;
     }
 
     if (pickedLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار موقع المحل على الخريطة')),
-      );
+      final loc = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.pickStoreOnMap ?? 'Pick store location')));
       setState(() => _loading = false);
       return;
     }
@@ -93,32 +84,29 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
       if (existingMethods.isNotEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('هذا البريد مسجل مسبقاً، استخدم تسجيل الدخول.')),
+            SnackBar(content: Text(AppLocalizations.of(context)?.emailAlreadyUsed ?? 'Email already used')),
           );
         }
         setState(() => _loading = false);
         return;
       }
 
-      // نحاول أولاً إنشاء الحساب في Supabase لتفادي ازدواجية في حال موجود مسبقاً في أحد النظامين
-      try {
-        await SupabaseService.client.auth.signUp(email: email, password: password);
-      } catch (e) {
-        final msg = e.toString().toLowerCase();
-        // إذا كان موجوداً بالفعل نحاول تسجيل الدخول بدلاً من الفشل
-        if (msg.contains('already') || msg.contains('registered') || msg.contains('exists')) {
-          try {
-            await SupabaseService.ensureLogin(email: email, password: password);
-          } catch (_) {/* تجاهل */}
-        } else {
-          debugPrint('Supabase signUp error غير متوقع: $e');
-        }
-      }
-
+      // إنشاء المستخدم Firebase أولاً
       final fbUserCred = await fb_auth.FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
-      // تأكد من أننا نملك جلسة Supabase (قد تكون موجودة أصلاً)
-      if (SupabaseService.client.auth.currentUser == null) {
-        try { await SupabaseService.ensureLogin(email: email, password: password); } catch (_) {}
+      SessionGuard.remember(email, password);
+      // محاولة جسر تلقائي (ينشئ أو يسجّل مستخدم Supabase بكلمة مشتقة)
+      bool bridged = await SupabaseService.ensureBridgedSessionFromFirebase();
+      if (!bridged) {
+        // fallback: استعمال نفس البريد/كلمة المرور مباشرة (حساب Supabase يدوي)
+        var supaOk = await SupabaseService.ensureLogin(email: email, password: password);
+        if (!supaOk) {
+          try {
+            await SupabaseService.client.auth.signUp(email: email, password: password);
+            supaOk = await SupabaseService.ensureLogin(email: email, password: password);
+          } catch (e) {
+            debugPrint('Supabase manual signUp/login failed: $e');
+          }
+        }
       }
       // جلب المستخدم الحالي بشكل موثوق بعد الإنشاء
       final user = await fb_auth.FirebaseAuth.instance.authStateChanges().first;
@@ -133,7 +121,7 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
         debugPrint('Firebase user.uid: \\${user.uid}');
         if (user.uid == null || user.uid.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تعذر الحصول على معرف المستخدم (user.uid)!')),
+            SnackBar(content: Text(AppLocalizations.of(context)?.unexpectedError ?? 'Unexpected error')),
           );
           setState(() => _loading = false);
           return;
@@ -160,9 +148,8 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
           // ملاحظة: إنشاء قروب المحل أصبح يدويًا من شاشة المجتمع
         } catch (e) {
           debugPrint('خطأ أثناء إضافة بيانات التاجر في Supabase: $e');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ أثناء إضافة بيانات التاجر في Supabase: $e')),
-          );
+          final loc = AppLocalizations.of(context);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${loc?.unexpectedError ?? 'Unexpected error'}: $e')));
         }
         // تخزين بيانات التاجر في مجموعة users (مطابقة مع تطبيق الزبون)
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
@@ -189,37 +176,64 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
           'created_at': DateTime.now().toIso8601String(),
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم إنشاء الحساب بنجاح!')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)?.accountCreatedSuccess ?? 'Account created')));
           debugPrint('تم إنشاء الحساب بنجاح، سيتم الانتقال إلى /dashboard');
           context.go('/dashboard');
           setState(() => _loading = false);
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('فشل إنشاء الحساب. حاول مرة أخرى.')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)?.accountCreateFailed ?? 'Account creation failed')));
         }
       }
     } on fb_auth.FirebaseAuthException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل إنشاء الحساب: ${e.message}')),
-        );
+  final loc = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${loc?.accountCreateFailed ?? 'Account creation failed'}: ${e.message}')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ غير متوقع: $e')),
-        );
+  final loc = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${loc?.unexpectedError ?? 'Unexpected error'}: $e')));
       }
     } finally {
       if (mounted) {
         setState(() => _loading = false);
       }
     }
+  }
+
+  Future<void> _getCurrentLocationAuto() async {
+    if (_gettingLocation) return; setState(()=>_gettingLocation=true);
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        final loc = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.locationServiceDisabled ?? 'Location disabled')));
+        return;
+      }
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          final loc = AppLocalizations.of(context);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.locationPermissionDenied ?? 'Location permission denied')));
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        final loc = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.locationPermissionDeniedForever ?? 'Permission permanently denied')));
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      setState(()=>pickedLocation = LatLng(pos.latitude, pos.longitude));
+      final loc = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.locationAutoCaptured ?? 'Location captured')));
+    } catch (e) {
+      final loc = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.locationFailed(e.toString()) ?? 'Location failed: $e')));
+    } finally { if(mounted) setState(()=>_gettingLocation=false); }
   }
 
   @override
@@ -239,8 +253,9 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('تسجيل تاجر جديد')),
+      appBar: AppBar(title: Text(loc?.registerNewMerchantTitle ?? 'Register')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
@@ -249,49 +264,49 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
             TextField(
               controller: _emailController, // تغيير اسم المتحكم
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'البريد الإلكتروني', // تغيير النص
-                prefixIcon: Icon(Icons.email),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: loc?.emailLabel ?? 'Email',
+                prefixIcon: const Icon(Icons.email),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'رقم الهاتف',
-                prefixIcon: Icon(Icons.phone),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: loc?.phoneLabel ?? 'Phone',
+                prefixIcon: const Icon(Icons.phone),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'كلمة المرور',
-                prefixIcon: Icon(Icons.lock),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: loc?.passwordLabel ?? 'Password',
+                prefixIcon: const Icon(Icons.lock),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _confirmPasswordController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'تأكيد كلمة المرور',
-                prefixIcon: Icon(Icons.lock_outline),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: loc?.confirmPasswordLabel ?? 'Confirm Password',
+                prefixIcon: const Icon(Icons.lock_outline),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _storeNameController,
-              decoration: const InputDecoration(
-                labelText: 'اسم المحل',
-                prefixIcon: Icon(Icons.store),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: loc?.storeNameLabel ?? 'Store Name',
+                prefixIcon: const Icon(Icons.store),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
@@ -300,12 +315,12 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
               items: activityTypes
                   .map((type) => DropdownMenuItem(
                         value: type,
-                        child: Text(type),
+                        child: Text(_localizedActivity(type, loc)),
                       ))
                   .toList(),
               onChanged: (val) {
                 setState(() {
-                  if (val == 'أخرى...') {
+                  if (val == 'Other') {
                     useOtherActivity = true;
                   } else {
                     useOtherActivity = false;
@@ -313,10 +328,10 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
                   }
                 });
               },
-              decoration: const InputDecoration(
-                labelText: 'نوع النشاط',
-                prefixIcon: Icon(Icons.storefront),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: loc?.activityTypeLabel ?? 'Activity Type',
+                prefixIcon: const Icon(Icons.storefront),
+                border: const OutlineInputBorder(),
               ),
             ),
             if (useOtherActivity)
@@ -324,16 +339,16 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
                 padding: const EdgeInsets.only(top: 16.0),
                 child: TextField(
                   controller: _activityTypeOtherController,
-                  decoration: const InputDecoration(
-                    labelText: 'حدد نوع النشاط الآخر',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: loc?.activityOtherPrompt ?? 'Specify other activity',
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
             const SizedBox(height: 16),
             TextButton.icon(
               icon: const Icon(Icons.location_on, color: Colors.deepPurple),
-              label: Text(pickedLocation == null ? 'حدد موقع المحل على الخريطة' : 'تم اختيار الموقع'),
+              label: Text(pickedLocation == null ? (loc?.pickStoreOnMap ?? 'Pick store location') : (loc?.storeLocationPicked ?? 'Location selected')),
               onPressed: () async {
                 final result = await Navigator.push(
                   context,
@@ -348,6 +363,12 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
                 }
               },
             ),
+            const SizedBox(height:8),
+            OutlinedButton.icon(
+              icon: _gettingLocation ? const SizedBox(width:16,height:16,child:CircularProgressIndicator(strokeWidth:2)) : const Icon(Icons.my_location, color: Colors.deepPurple),
+              label: Text(_gettingLocation ? (loc?.autoLocating ?? 'Locating...') : (loc?.autoLocateButton ?? 'Auto locate')),
+              onPressed: _gettingLocation ? null : _getCurrentLocationAuto,
+            ),
             const SizedBox(height: 32),
             _loading
                 ? const Center(child: CircularProgressIndicator())
@@ -359,11 +380,25 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text('تسجيل', style: TextStyle(fontSize: 18)),
+                    child: Text(loc?.submitRegister ?? 'Register', style: const TextStyle(fontSize: 18)),
                   ),
           ],
         ),
       ),
     );
+  }
+
+  String _localizedActivity(String key, AppLocalizations? loc) {
+    if (loc == null) return key;
+    final isAr = loc.localeName.startsWith('ar');
+    switch (key) {
+      case 'Cafe': return isAr ? 'مقهى' : 'Cafe';
+      case 'Restaurant': return isAr ? 'مطعم' : 'Restaurant';
+      case 'Clothing Store': return isAr ? 'متجر ملابس' : 'Clothing Store';
+      case 'Pharmacy': return isAr ? 'صيدلية' : 'Pharmacy';
+      case 'Supermarket': return isAr ? 'سوبرماركت' : 'Supermarket';
+      case 'Other': return loc.otherActivityLabel;
+    }
+    return key;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class CustomerReportsScreen extends StatefulWidget {
   const CustomerReportsScreen({Key? key}) : super(key: key);
@@ -23,14 +24,15 @@ class _CustomerReportsScreenState extends State<CustomerReportsScreen> {
   // يمكنك حذفها إذا لم تكن هناك حاجة إليها
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('بلاغات الزبائن')),
+      appBar: AppBar(title: Text(loc?.customerReportsTitle ?? 'Reports')),
       body: ListView.builder(
         itemCount: _dummyReports.length,
         itemBuilder: (context, i) {
           final report = _dummyReports[i];
           final createdAt = report['createdAt'];
-          String formattedDate = 'تاريخ غير معروف';
+          String formattedDate = loc?.unknownDate ?? 'Unknown date';
           if (createdAt is Timestamp) {
             formattedDate =
                 DateFormat('yyyy/MM/dd – hh:mm a').format(createdAt.toDate());
@@ -40,9 +42,9 @@ class _CustomerReportsScreenState extends State<CustomerReportsScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: ListTile(
               leading: const Icon(Icons.report, color: Colors.red),
-              title: Text(report['message'] ?? 'لا يوجد نص للرسالة',
+              title: Text(report['message'] ?? (loc?.noMessage ?? 'No message'),
                   maxLines: 2, overflow: TextOverflow.ellipsis),
-              subtitle: Text('تاريخ البلاغ: $formattedDate'),
+              subtitle: Text(loc?.reportDate(formattedDate) ?? 'Date: $formattedDate'),
               trailing: Text('#${report['id']?.substring(0, 8) ?? ''}'),
             ),
           );

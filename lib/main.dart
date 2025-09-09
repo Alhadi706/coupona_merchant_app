@@ -23,6 +23,11 @@ import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'services/supabase_service.dart';
 import 'services/session_guard.dart';
 import 'screens/settings_screen.dart'; // استيراد شاشة الإعدادات
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/locale_notifier.dart';
+import 'package:provider/provider.dart';
+import 'gen_l10n/app_localizations.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,11 +40,21 @@ void main() async {
   // تهيئة Supabase عبر الخدمة (مثل تطبيق الزبون)
   await SupabaseService.init();
 
+  // تهيئة Hive (مستخدم لتخزين اللغة وغيرها)
+  await Hive.initFlutter();
+
   // طباعة session والمستخدم الحالي من Supabase للتأكد من الربط
   final supabaseSession = Supabase.instance.client.auth.currentSession;
   final supabaseUser = Supabase.instance.client.auth.currentUser;
   print('Supabase session: ' + (supabaseSession != null ? supabaseSession.toJson().toString() : 'null'));
   print('Supabase user: ' + (supabaseUser != null ? supabaseUser.id : 'null'));
+
+  // مستمع حالة Firebase لتشغيل الجسر تلقائياً
+  fb_auth.FirebaseAuth.instance.authStateChanges().listen((u) {
+    if (u != null) {
+      SupabaseService.ensureBridgedSessionFromFirebase();
+    }
+  });
 
   // إزالة المستمع القديم لتجنب التعارض
   // fb_auth.FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -70,8 +85,13 @@ final _router = GoRouter(
     final bool loggingIn = state.matchedLocation == '/' || state.matchedLocation == '/register';
 
     // حارس جلسة Supabase: إذا جلسة Firebase موجودة لكن Supabase مفقودة نحاول إعادة تسجيل الدخول بصمت
-    if (loggedIn && Supabase.instance.client.auth.currentUser == null && SessionGuard.lastEmail != null && SessionGuard.lastPassword != null) {
-      try { await SupabaseService.ensureLogin(email: SessionGuard.lastEmail!, password: SessionGuard.lastPassword!); } catch (_) {}
+    if (loggedIn && Supabase.instance.client.auth.currentUser == null) {
+      // نحاول الجسر أولاً (قد ينجح إن لم يكن قد جُرّب بعد)
+      try { await SupabaseService.ensureBridgedSessionFromFirebase(); } catch (_) {}
+      // fallback للاعتمادات المخزنة
+      if (Supabase.instance.client.auth.currentUser == null && SessionGuard.lastEmail != null && SessionGuard.lastPassword != null) {
+        try { await SupabaseService.ensureLogin(email: SessionGuard.lastEmail!, password: SessionGuard.lastPassword!); } catch (_) {}
+      }
     }
 
     if (!loggedIn && !loggingIn) {
@@ -151,18 +171,44 @@ final _router = GoRouter(
   ],
 );
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final LocaleNotifier _localeNotifier = LocaleNotifier();
+
+  @override
+  void initState() {
+    super.initState();
+    _localeNotifier.load();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: _router,
-      title: 'تطبيق التاجر',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return ChangeNotifierProvider.value(
+      value: _localeNotifier,
+      child: Consumer<LocaleNotifier>(
+        builder: (context, ln, _) {
+          return MaterialApp.router(
+            routerConfig: _router,
+            onGenerateTitle: (ctx) => AppLocalizations.of(ctx)?.appTitle ?? 'Merchant App',
+            theme: ThemeData(primarySwatch: Colors.blue),
+            debugShowCheckedModeBanner: false,
+            locale: ln.locale,
+            supportedLocales: ln.supported,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+          );
+        },
       ),
-      debugShowCheckedModeBanner: false,
     );
   }
 }

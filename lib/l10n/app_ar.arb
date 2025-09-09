@@ -1,0 +1,263 @@
+{
+  "appTitle": "تطبيق التاجر",
+  "login": "تسجيل الدخول",
+  "logout": "تسجيل خروج",
+  "settings": "الإعدادات",
+  "language": "اللغة",
+  "noMerchantCode": "لا يوجد رمز",
+  "copied": "تم النسخ",
+  "merchantCode": "رمز التاجر",
+  "home": "الرئيسية",
+  "offers": "العروض",
+  "customers": "الزبائن",
+  "products": "المنتجات",
+  "receipts": "الإيصالات",
+  "copiedMerchantCode": "تم نسخ رمز التاجر",
+  "close": "إغلاق",
+  "merchantLoginTitle": "دخول التاجر",
+  "enterEmailPassword": "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+  "loginFailed": "فشل تسجيل الدخول",
+  "loginButton": "دخول",
+  "createMerchantAccount": "إنشاء حساب تاجر جديد",
+  "forgotPassword": "نسيت كلمة المرور؟",
+  "sendResetLink": "سيتم إرسال رابط استرجاع كلمة المرور",
+  "supabaseSessionFailed": "تعذّر إنشاء جلسة Supabase، لن تعمل بعض الميزات",
+  "emailLabel": "البريد الإلكتروني",
+  "passwordLabel": "كلمة المرور",
+  "registerTitle": "تسجيل تاجر",
+  "fillAllFields": "يرجى تعبئة جميع الحقول المطلوبة",
+  "passwordsNotMatch": "كلمتا المرور غير متطابقتين",
+  "invalidEmail": "يرجى إدخال بريد إلكتروني صحيح",
+  "pickStoreLocation": "يرجى اختيار موقع المحل على الخريطة",
+  "emailAlreadyUsed": "هذا البريد مسجل مسبقاً، استخدم تسجيل الدخول.",
+  "accountCreatedSuccess": "تم إنشاء الحساب بنجاح!",
+  "accountCreateFailed": "فشل إنشاء الحساب",
+  "unexpectedError": "حدث خطأ غير متوقع",
+  "confirmPasswordLabel": "تأكيد كلمة المرور",
+  "storeNameLabel": "اسم المحل",
+  "phoneLabel": "رقم الهاتف",
+  "activityTypeLabel": "نوع النشاط",
+  "otherActivityLabel": "نشاط آخر",
+  "locationLabel": "الموقع",
+  "registerButton": "إنشاء حساب",
+  "selectLocationButton": "اختيار الموقع",
+  "getAutoLocationButton": "تحديد موقعي تلقائياً",
+  "locatingMessage": "جاري تحديد الموقع...",
+  "manageOffersTitle": "إدارة العروض",
+  "addNewOffer": "إضافة عرض جديد",
+  "migrateOldOffers": "مزامنة/ترحيل العروض القديمة",
+  "offerIdMissing": "رقم العرض غير موجود!",
+  "offerDeleted": "تم حذف العرض بنجاح.",
+  "offerDeleteFailed": "فشل حذف العرض",
+  "offerStatusChanged": "تم تغيير حالة العرض بنجاح.",
+  "offerStatusChangeFailed": "فشل تغيير حالة العرض",
+  "autoMigrationFailed": "فشل الترحيل التلقائي",
+  "offersMigratedCount": "تم ترحيل {count} عرض من Firestore",
+  "@offersMigratedCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"productsScreenTitle": "منتجات المحل"
+  ,"importCsv": "استيراد CSV"
+  ,"csvTemplate": "نموذج"
+  ,"exportCsv": "تصدير CSV"
+  ,"refresh": "تحديث"
+  ,"searchHintProducts": "بحث سريع / غامض عن اسم المنتج..."
+  ,"debugProductsBanner": "[DEBUG] شاشة المنتجات (يظهر فقط في التطوير)"
+  ,"noProductsYet": "لا توجد منتجات بعد"
+  ,"addProductManual": "إضافة منتج يدوي"
+  ,"addProduct": "إضافة"
+  ,"addProductTitle": "إضافة منتج جديد"
+  ,"productNameLabel": "اسم المنتج"
+  ,"productPointsLabel": "النقاط للمنتج"
+  ,"basisSelectionLabel": "النقاط بناء على:"
+  ,"basisProductDirect": "المنتج مباشرة"
+  ,"basisPrice": "السعر"
+  ,"basisQuantity": "الكمية"
+  ,"basisOperation": "عملية الشراء"
+  ,"cancel": "إلغاء"
+  ,"supabaseSessionMissing": "جلسة Supabase غير متوفرة، أعد تسجيل الدخول"
+  ,"productAdded": "تمت إضافة المنتج"
+  ,"productAddFailed": "فشل الإضافة"
+  ,"editProductTitle": "تعديل المنتج"
+  ,"productNameImmutable": "اسم المنتج (غير قابل للتعديل)"
+  ,"productUpdated": "تم التحديث"
+  ,"productUpdateFailed": "فشل التحديث"
+  ,"emptyResults": "لا نتائج"
+  ,"clear": "مسح"
+  ,"searchResultsCount": "نتائج البحث: {count}"
+  ,"@searchResultsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"tableMissingTitle": "الجدول غير موجود"
+  ,"tableMissingMessage": "أنشئ جدول merchant_products في Supabase ثم أعد فتح الصفحة."
+  ,"recheck": "إعادة الفحص"
+  ,"csvFileEmpty": "ملف فارغ"
+  ,"missingName": "اسم مفقود"
+  ,"invalidPoints": "نقاط غير صالحة"
+  ,"noProcessableRows": "لا صفوف قابلة للمعالجة"
+  ,"parseFailed": "فشل التحليل"
+  ,"importReviewTitle": "مراجعة الاستيراد"
+  ,"validInvalidCount": "صالحة: {valid} | أخطاء: {invalid}"
+  ,"@validInvalidCount": {"placeholders": {"valid": {"type": "int"}, "invalid": {"type": "int"}}}
+  ,"skipDuplicateProducts": "تخطي المنتجات ذات الاسم المكرر"
+  ,"importingEllipsis": "جارٍ الإدراج..."
+  ,"importProductsButton": "استيراد {count}"
+  ,"@importProductsButton": {"placeholders": {"count": {"type": "int"}}}
+  ,"sessionMissing": "جلسة مفقودة"
+  ,"noNewItemsAfterDuplicates": "لا عناصر جديدة بعد تطبيق المكررات"
+  ,"insertedProductsResult": "تم إدراج {inserted} منتجاً (مرفوض {rejected})"
+  ,"@insertedProductsResult": {"placeholders": {"inserted": {"type": "int"}, "rejected": {"type": "int"}}}
+  ,"importFailed": "فشل الاستيراد"
+  ,"csvExportCreated": "تم إنشاء CSV - انسخ النص"
+  ,"exportFailed": "فشل التصدير"
+  ,"priceRuleFormat": "السعر {value} = {points} نقطة"
+  ,"@priceRuleFormat": {"placeholders": {"value": {"type": "String"}, "points": {"type": "int"}}}
+  ,"quantityRuleFormat": "الكمية {value} = {points} نقطة"
+  ,"@quantityRuleFormat": {"placeholders": {"value": {"type": "String"}, "points": {"type": "int"}}}
+  ,"operationRuleFormat": "عدد العمليات {value} = {points} نقطة"
+  ,"@operationRuleFormat": {"placeholders": {"value": {"type": "String"}, "points": {"type": "int"}}}
+  ,"pointsRuleFormat": "النقاط: {points}"
+  ,"@pointsRuleFormat": {"placeholders": {"points": {"type": "int"}}}
+  ,"editPointsTooltip": "تعديل النقاط"
+  ,"ruleValuePriceLabel": "السعر المحدد"
+  ,"ruleValueQuantityLabel": "الكمية المحددة"
+  ,"ruleValueOperationLabel": "عدد العمليات"
+  ,"rulePointsLabel": "عدد النقاط"
+  ,"ruleExamplePrice": "مثال: 10 دينار = 1 نقطة"
+  ,"ruleExampleQuantity": "مثال: 5 قطع = 2 نقطة"
+  ,"ruleExampleOperation": "مثال: 1 عملية = 3 نقاط"
+  ,"similarityFormat": "تشابه: {sim}"
+  ,"@similarityFormat": {"placeholders": {"sim": {"type": "String"}}}
+  ,"noOffersYet": "لا توجد عروض بعد"
+  ,"noMatchingResults": "لا نتائج مطابقة"
+  ,"notSpecified": "غير محدد"
+  ,"storeNameUnavailable": "اسم المحل غير متوفر"
+  ,"noTitle": "بلا عنوان"
+  ,"noDescription": "لا يوجد وصف"
+  ,"deliveryAvailable": "خدمة التوصيل متوفرة"
+  ,"deliveryNotAvailable": "خدمة التوصيل غير متوفرة"
+  ,"endsAtPrefix": "ينتهي في:"
+  ,"activeLabel": "مفعل"
+  ,"manageCustomersTitle": "إدارة الزبائن"
+  ,"loadingCustomers": "جاري تحميل الزبائن..."
+  ,"customersFetchError": "فشل جلب الزبائن"
+  ,"noCustomersYet": "لا يوجد زبائن بعد"
+  ,"pointsLabel": "النقاط: {points}"
+  ,"@pointsLabel": {"placeholders": {"points": {"type": "int"}}}
+  ,"customerDetailsTitle": "تفاصيل الزبون"
+  ,"customerNotFound": "الزبون غير موجود"
+  ,"totalPoints": "مجموع النقاط: {points}"
+  ,"@totalPoints": {"placeholders": {"points": {"type": "int"}}}
+  ,"purchaseHistory": "تاريخه الشرائي"
+  ,"redeemedRewards": "الجوائز المستلمة"
+  ,"receiptsHistory": "سجل الفواتير"
+  ,"customerOffers": "عروض الزبون"
+  ,"noPurchasesYet": "لا يوجد مشتريات بعد"
+  ,"noRewardsYet": "لا يوجد جوائز مستلمة"
+  ,"noReceiptsYet": "لا يوجد فواتير بعد"
+  ,"noOffersForCustomer": "لا يوجد عروض لهذا الزبون"
+  ,"orderNumber": "طلب رقم: {id}"
+  ,"@orderNumber": {"placeholders": {"id": {"type": "String"}}}
+  ,"invoiceNumber": "فاتورة رقم: {id}"
+  ,"@invoiceNumber": {"placeholders": {"id": {"type": "String"}}}
+  ,"dateLabel": "التاريخ: {date}"
+  ,"@dateLabel": {"placeholders": {"date": {"type": "String"}}}
+  ,"amountLabel": "المبلغ: {amount}"
+  ,"@amountLabel": {"placeholders": {"amount": {"type": "String"}}}
+  ,"supportOffer": "دعم العرض"
+  ,"offerSupported": "تم دعم العرض"
+  ,"customerReportsTitle": "بلاغات الزبائن"
+  ,"unknownDate": "تاريخ غير معروف"
+  ,"reportDate": "تاريخ البلاغ: {date}"
+  ,"@reportDate": {"placeholders": {"date": {"type": "String"}}}
+  ,"noMessage": "لا يوجد نص"
+  ,"receiptsLogTitle": "سجل الفواتير"
+  ,"statusPending": "قيد المراجعة"
+  ,"statusAccepted": "مقبولة"
+  ,"statusRejected": "مرفوضة"
+  ,"statusLabel": "الحالة: {value}"
+  ,"@statusLabel": {"placeholders": {"value": {"type": "String"}}}
+  ,"invoiceNumberShort": "فاتورة رقم: {num}"
+  ,"@invoiceNumberShort": {"placeholders": {"num": {"type": "String"}}}
+  ,"createdAtLabel": "التاريخ: {date}"
+  ,"@createdAtLabel": {"placeholders": {"date": {"type": "String"}}}
+  ,"quantityPrice": "الكمية: {qty} | السعر: {price}"
+  ,"@quantityPrice": {"placeholders": {"qty": {"type": "int"}, "price": {"type": "String"}}}
+  ,"noProductDetails": "لا توجد تفاصيل منتجات"
+  ,"noReceiptsYet": "لا توجد فواتير بعد"
+  ,"noActiveRewards": "لا توجد جوائز مفعلة"
+  ,"noRedeemedRewards": "لا توجد جوائز تم استبدالها"
+  ,"manageRewardsTitle": "إدارة الجوائز"
+  ,"activeRewardsTab": "الجوائز المفعلة"
+  ,"redeemedRewardsTab": "سجل الاستبدال"
+  ,"addNewReward": "إضافة جائزة جديدة"
+  ,"syncRewards": "مزامنة جوائز Firestore"
+  ,"scanQrReward": "مسح QR لاسترداد"
+  ,"syncingDone": "تمت المزامنة"
+  ,"syncFailed": "فشل المزامنة"
+  ,"loginFirstSupabase": "سجّل الدخول أولاً (جلسة Supabase غير موجودة)"
+  ,"deleteRewardError": "فشل حذف الجائزة"
+  ,"rewardNoTitle": "جائزة بدون عنوان"
+  ,"qrRewardTitle": "QR لاستلام الجائزة"
+  ,"closeLower": "إغلاق"
+  ,"unknownDateShort": "تاريخ غير معروف"
+  ,"rewardTitleLabel": "جائزة: {title}"
+  ,"@rewardTitleLabel": {"placeholders": {"title": {"type": "String"}}}
+  ,"customerLabel": "زبون: {name}"
+  ,"@customerLabel": {"placeholders": {"name": {"type": "String"}}}
+  ,"registerNewMerchantTitle": "تسجيل تاجر جديد"
+  ,"activityOtherPrompt": "حدد نشاط آخر"
+  ,"pickStoreOnMap": "حدد موقع المحل على الخريطة"
+  ,"storeLocationPicked": "تم اختيار الموقع"
+  ,"autoLocating": "جارٍ تحديد الموقع..."
+  ,"autoLocateButton": "تحديد الموقع تلقائياً"
+  ,"submitRegister": "تسجيل"
+  ,"locationServiceDisabled": "خدمة الموقع معطلة"
+  ,"locationPermissionDenied": "تم رفض إذن الموقع"
+  ,"locationPermissionDeniedForever": "تم رفض إذن الموقع نهائياً. افتح الإعدادات."
+  ,"locationAutoCaptured": "تم التقاط الموقع تلقائياً"
+  ,"locationFailed": "فشل جلب الموقع: {error}"
+  ,"@locationFailed": {"placeholders": {"error": {"type": "String"}}}
+  ,"completeProfileTitle": "إكمال الملف الشخصي"
+  ,"mustLoginFirst": "يجب تسجيل الدخول أولاً"
+  ,"profileSavedSuccess": "تم حفظ الملف بنجاح!"
+  ,"genericErrorWithMessage": "خطأ: {message}"
+  ,"@genericErrorWithMessage": {"placeholders": {"message": {"type": "String"}}}
+  ,"requiredField": "الحقل مطلوب"
+  ,"save": "حفظ"
+  ,"pointsSystemTitle": "نظام النقاط"
+  ,"pointsMechanismTitle": "آلية الحساب"
+  ,"pointsSimplifiedDescription": "النظام مبسّط: إجمالي النقاط = مجموع (النقاط المحددة للمنتج × الكمية في الفاتورة). لا إعدادات إضافية حالياً."
+  ,"pointsSimplificationBenefitsTitle": "مزايا التبسيط:" 
+  ,"pointsSimplificationBenefitsBullet": "• أداء أسرع وأسهل للفهم\n• تجنب التعقيد للحالات الخاصة\n• تغيير نقاط المنتج يُطبق فوراً بدون أثر رجعي إلا إذا طُبق يدوياً"
+  ,"addOfferTitle": "إضافة عرض جديد"
+  ,"offerImagePlaceholderOptional": "صورة العرض (اختيارية)"
+  ,"pickFromGallery": "من الاستوديو"
+  ,"captureWithCamera": "التقاط بالكاميرا"
+  ,"imageOptionalNote": "يمكن ترك الصورة فارغة، أو اختيار/التقاط صورة جديدة."
+  ,"offerTitleLabel": "عنوان العرض"
+  ,"offerDescriptionLabel": "وصف العرض"
+  ,"originalPriceLabel": "السعر الأصلي"
+  ,"discountPercentageLabel": "نسبة الخصم (%)"
+  ,"discountPercentageInvalid": "ادخل نسبة بين 1-99"
+  ,"startDateLabel": "تاريخ البدء"
+  ,"endDateLabel": "تاريخ الانتهاء"
+  ,"chooseGeneric": "اختيار"
+  ,"pickOfferLocation": "حدد موقع العرض على الخريطة"
+  ,"offerLocationPicked": "تم اختيار الموقع"
+  ,"offerTypeLabel": "نوع العرض"
+  ,"offerTypeDiscount": "خصم مباشر"
+  ,"offerTypeGift": "هدية مع الشراء"
+  ,"offerTypeCoupon": "كوبون"
+  ,"offerTypeLimitedTime": "عرض لفترة محدودة"
+  ,"offerTypeOther": "آخر..."
+  ,"selectStartEndDates": "الرجاء تحديد تاريخ البدء والانتهاء"
+  ,"offerLocationRequired": "يرجى اختيار موقع العرض على الخريطة"
+  ,"offerTypeRequired": "يرجى اختيار نوع العرض"
+  ,"offerAddedSynced": "تم إضافة العرض ومزامنته"
+  ,"offerUpdatedSynced": "تم تحديث العرض ومزامنته"
+  ,"imagePickFailed": "تعذر التقاط/اختيار الصورة: {error}"
+  ,"@imagePickFailed": {"placeholders": {"error": {"type": "String"}}}
+  ,"savedWithSupabaseWarning": "تم الحفظ (تحذير مزامنة Supabase: {error})"
+  ,"@savedWithSupabaseWarning": {"placeholders": {"error": {"type": "String"}}}
+  ,"offerEndsAt": "ينتهي في: {date}"
+  ,"@offerEndsAt": {"placeholders": {"date": {"type": "String"}}}
+  ,"active": "مفعل"
+  ,"storeNameNotAvailable": "اسم المحل غير متوفر"
+  }

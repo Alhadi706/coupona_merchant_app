@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({Key? key}) : super(key: key);
@@ -20,9 +21,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     setState(() => _loading = true);
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يجب تسجيل الدخول أولاً')),
-      );
+  final loc = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.mustLoginFirst ?? 'Login required')));
       setState(() => _loading = false);
       return;
     }
@@ -34,15 +34,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         'created_at': DateTime.now().toIso8601String(),
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ الملف الشخصي بنجاح!')),
-        );
+        final loc = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.profileSavedSuccess ?? 'Profile saved')));
         Navigator.of(context).pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('حدث خطأ: $e')),
-      );
+      final loc = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.genericErrorWithMessage(e.toString()) ?? 'Error: $e')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -50,8 +48,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('إكمال الملف الشخصي')),
+      appBar: AppBar(title: Text(loc?.completeProfileTitle ?? 'Complete Profile')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -60,8 +59,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextFormField(
-                decoration: const InputDecoration(labelText: 'اسم المتجر'),
-                validator: (v) => v == null || v.isEmpty ? 'الحقل مطلوب' : null,
+                decoration: InputDecoration(labelText: loc?.storeNameLabel ?? 'Store Name'),
+                validator: (v) => v == null || v.isEmpty ? (loc?.requiredField ?? 'Required') : null,
                 onSaved: (v) => _storeName = v ?? '',
               ),
               const SizedBox(height: 24),
@@ -69,7 +68,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 onPressed: _loading ? null : _saveProfile,
                 child: _loading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('حفظ'),
+                    : Text(loc?.save ?? 'Save'),
               ),
             ],
           ),

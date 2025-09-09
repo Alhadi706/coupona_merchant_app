@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class MerchantCustomersScreen extends StatelessWidget {
   const MerchantCustomersScreen({Key? key}) : super(key: key);
@@ -29,9 +30,10 @@ class MerchantCustomersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إدارة الزبائن'),
+        title: Text(loc?.manageCustomersTitle ?? 'Customers'),
         backgroundColor: Colors.deepPurple,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
@@ -41,11 +43,11 @@ class MerchantCustomersScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+            return Center(child: Text('${loc?.customersFetchError ?? 'Error'}: ${snapshot.error}'));
           }
           final customers = snapshot.data ?? [];
           if (customers.isEmpty) {
-            return const Center(child: Text('لا يوجد زبائن بعد'));
+            return Center(child: Text(loc?.noCustomersYet ?? 'No customers'));
           }
           return ListView.builder(
             itemCount: customers.length,
@@ -55,10 +57,10 @@ class MerchantCustomersScreen extends StatelessWidget {
                 child: ListTile(
                   leading: const Icon(Icons.person, color: Colors.deepPurple),
                   title: Text(customer['name'] ?? ''),
-                  subtitle: Text('النقاط: ${customer['points'] ?? 0}'),
+                  subtitle: Text(loc?.pointsLabel((customer['points'] ?? 0) as int) ?? 'Points: ${customer['points'] ?? 0}'),
                   trailing: IconButton(
                     icon: const Icon(Icons.info_outline, color: Colors.blue),
-                    tooltip: 'تفاصيل الزبون',
+                    tooltip: loc?.customerDetailsTitle ?? 'Details',
                     onPressed: () {
                       Navigator.pushNamed(
                         context,

@@ -6,6 +6,7 @@ import 'package:hive/hive.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:coupona_merchant/widgets/home_button.dart';
+import 'package:coupona_merchant/l10n/app_localizations.dart';
 
 import '../widgets/address_from_latlng.dart';
 
@@ -17,6 +18,7 @@ class MerchantOffersScreen extends StatefulWidget {
 }
 
 class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
+  AppLocalizations? get loc => AppLocalizations.of(context);
   String? _merchantId;
   String? _supabaseMerchantId;
   String _searchQuery = '';
@@ -93,13 +95,13 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
       await box.put(key, DateTime.now().toIso8601String());
       if (mounted && _migratedCount > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تم ترحيل $_migratedCount عرض من Firestore')),
+          SnackBar(content: Text(loc?.offersMigratedCount(_migratedCount) ?? 'Migrated $_migratedCount offers')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل الترحيل التلقائي: $e')),
+          SnackBar(content: Text('${loc?.autoMigrationFailed ?? 'Migration failed'}: $e')),
         );
       }
     } finally {
@@ -146,7 +148,7 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
   Future<void> deleteOffer(String offerId) async {
     if (offerId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('رقم العرض غير موجود!')),
+  SnackBar(content: Text(loc?.offerIdMissing ?? 'Offer ID missing!')),
       );
       return;
     }
@@ -157,13 +159,13 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
       await box.delete(offerId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حذف العرض بنجاح.')),
+          SnackBar(content: Text(loc?.offerDeleted ?? 'Offer deleted')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل حذف العرض: $e')),
+          SnackBar(content: Text('${loc?.offerDeleteFailed ?? 'Delete failed'}: $e')),
         );
       }
     }
@@ -175,13 +177,13 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
       await supabase.from('offers').update({'isActive': !currentStatus}).eq('id', offerId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم تغيير حالة العرض بنجاح.')),
+          SnackBar(content: Text(loc?.offerStatusChanged ?? 'Status changed')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل تغيير حالة العرض: $e')),
+          SnackBar(content: Text('${loc?.offerStatusChangeFailed ?? 'Status change failed'}: $e')),
         );
       }
     }
@@ -194,14 +196,15 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إدارة العروض'),
+        title: Text(loc?.manageOffersTitle ?? 'Manage Offers'),
         leading: const HomeButton(),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
-            tooltip: 'إضافة عرض جديد',
+            tooltip: loc?.addNewOffer ?? 'Add Offer',
             onPressed: () {
               Navigator.push(
                 context,
@@ -213,7 +216,7 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.sync),
-            tooltip: 'مزامنة/ترحيل العروض القديمة',
+            tooltip: loc?.migrateOldOffers ?? 'Migrate Old',
             onPressed: () => _maybeMigrateOffers(force: true),
           ),
         ],
@@ -229,7 +232,7 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
                 });
               },
               decoration: InputDecoration(
-                labelText: 'ابحث عن عرض بالاسم...',
+                labelText: loc?.offers ?? 'Offers',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25.0),
@@ -250,10 +253,10 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+                  return Center(child: Text('${loc?.unexpectedError ?? 'Error'}: ${snapshot.error}'));
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('لا توجد عروض حالياً.'));
+                  return Center(child: Text(loc?.noOffersYet ?? 'No offers'));
                 }
                 // تصفية النتائج هنا فقط
                 final offers = _searchQuery.isEmpty
@@ -263,7 +266,7 @@ class _MerchantOffersScreenState extends State<MerchantOffersScreen> {
                         return title.contains(_searchQuery.toLowerCase());
                       }).toList();
                 if (offers.isEmpty) {
-                  return const Center(child: Text('لا توجد نتائج مطابقة.'));
+                  return Center(child: Text(loc?.noMatchingResults ?? 'No matching results'));
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.all(8),
@@ -313,7 +316,8 @@ class _OfferCard extends StatelessWidget {
   final isActive = offer['is_active'] ?? offer['isActive'] ?? true;
   final type = offer['offer_type'] ?? offer['type'] ?? 'N/A';
   final endDateStr = offer['end_date'] ?? offer['endDate'];
-    String displayEndDate = 'غير محدد';
+    final loc = AppLocalizations.of(context);
+    String displayEndDate = loc?.notSpecified ?? 'Not specified';
     if (endDateStr is String) {
       final date = DateTime.tryParse(endDateStr);
       if (date != null) {
@@ -342,7 +346,8 @@ class _OfferCard extends StatelessWidget {
   }
 
   Widget _buildCardContent(BuildContext context, Map<String, dynamic>? merchantData, bool isActive, String type, String displayEndDate) {
-    final storeName = merchantData?['store_name'] ?? 'اسم المحل غير متوفر';
+    final loc = AppLocalizations.of(context);
+    final storeName = merchantData?['store_name'] ?? (loc?.storeNameNotAvailable ?? 'Store name not available');
     final location = merchantData?['location'];
 
     // تفاصيل خاصة بالعرض نفسه
@@ -398,7 +403,7 @@ class _OfferCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    offer['title'] ?? 'بلا عنوان',
+                    offer['title'] ?? (loc?.noTitle ?? 'No title'),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -410,7 +415,7 @@ class _OfferCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    offer['description'] ?? 'لا يوجد وصف',
+                    offer['description'] ?? (loc?.noDescription ?? 'No description'),
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -443,7 +448,9 @@ class _OfferCard extends StatelessWidget {
               const SizedBox(height: 8),
               _buildDetailRow(
                 Icons.delivery_dining,
-                deliveryAvailable ? 'خدمة التوصيل متوفرة' : 'خدمة التوصيل غير متوفرة',
+                deliveryAvailable
+                    ? (loc?.deliveryAvailable ?? 'Delivery available')
+                    : (loc?.deliveryNotAvailable ?? 'Delivery not available'),
               ),
             ],
           ),
@@ -452,10 +459,10 @@ class _OfferCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('ينتهي في: $displayEndDate', style: const TextStyle(color: Colors.red, fontSize: 12)),
+            Text(loc?.offerEndsAt(displayEndDate) ?? 'Ends at: $displayEndDate', style: const TextStyle(color: Colors.red, fontSize: 12)),
             Row(
               children: [
-                const Text('مفعل', style: TextStyle(fontSize: 14)),
+                Text(loc?.active ?? 'Active', style: const TextStyle(fontSize: 14)),
                 Switch(
                   value: isActive,
                   onChanged: (value) => onToggleStatus(isActive),
