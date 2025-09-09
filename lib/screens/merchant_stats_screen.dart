@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:coupona_merchant/widgets/home_button.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class MerchantStatsScreen extends StatefulWidget {
   const MerchantStatsScreen({super.key});
@@ -55,7 +56,6 @@ class _MerchantStatsScreenState extends State<MerchantStatsScreen> {
       lastDate: DateTime(now.year, now.month, now.day).add(const Duration(days: 1)),
       initialDateRange: _range,
       helpText: 'اختر نطاق التاريخ',
-      locale: const Locale('ar'),
     );
     if (picked != null) {
       setState(() => _range = picked);
@@ -173,13 +173,14 @@ class _MerchantStatsScreenState extends State<MerchantStatsScreen> {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 900;
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('التحليلات والإحصائيات'),
+        title: Text(loc?.customerReportsTitle ?? 'Customer Reports'),
         leading: const HomeButton(),
         actions: [
-          IconButton(onPressed: _pickRange, tooltip: 'تحديد تاريخ', icon: const Icon(Icons.date_range)),
-          IconButton(onPressed: _loadAll, tooltip: 'تحديث', icon: const Icon(Icons.refresh)),
+          IconButton(onPressed: _pickRange, tooltip: loc?.refresh ?? 'Select date', icon: const Icon(Icons.date_range)),
+          IconButton(onPressed: _loadAll, tooltip: loc?.refresh ?? 'Refresh', icon: const Icon(Icons.refresh)),
         ],
       ),
       body: _loading

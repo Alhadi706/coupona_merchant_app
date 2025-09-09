@@ -1175,6 +1175,384 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Customer: {name}'**
   String customerLabel(String name);
+
+  /// No description provided for @registerNewMerchantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New Merchant Registration'**
+  String get registerNewMerchantTitle;
+
+  /// No description provided for @activityOtherPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Specify other activity'**
+  String get activityOtherPrompt;
+
+  /// No description provided for @pickStoreOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick store location on map'**
+  String get pickStoreOnMap;
+
+  /// No description provided for @storeLocationPicked.
+  ///
+  /// In en, this message translates to:
+  /// **'Location selected'**
+  String get storeLocationPicked;
+
+  /// No description provided for @autoLocating.
+  ///
+  /// In en, this message translates to:
+  /// **'Locating...'**
+  String get autoLocating;
+
+  /// No description provided for @autoLocateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto locate'**
+  String get autoLocateButton;
+
+  /// No description provided for @submitRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Register'**
+  String get submitRegister;
+
+  /// No description provided for @locationServiceDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Location service disabled'**
+  String get locationServiceDisabled;
+
+  /// No description provided for @locationPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission denied'**
+  String get locationPermissionDenied;
+
+  /// No description provided for @locationPermissionDeniedForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission permanently denied. Open settings.'**
+  String get locationPermissionDeniedForever;
+
+  /// No description provided for @locationAutoCaptured.
+  ///
+  /// In en, this message translates to:
+  /// **'Location captured automatically'**
+  String get locationAutoCaptured;
+
+  /// No description provided for @locationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to get location: {error}'**
+  String locationFailed(String error);
+
+  /// No description provided for @completeProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Profile'**
+  String get completeProfileTitle;
+
+  /// No description provided for @mustLoginFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'You must login first'**
+  String get mustLoginFirst;
+
+  /// No description provided for @profileSavedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved successfully!'**
+  String get profileSavedSuccess;
+
+  /// No description provided for @genericErrorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {message}'**
+  String genericErrorWithMessage(String message);
+
+  /// No description provided for @requiredField.
+  ///
+  /// In en, this message translates to:
+  /// **'Field is required'**
+  String get requiredField;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @pointsSystemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Points System'**
+  String get pointsSystemTitle;
+
+  /// No description provided for @pointsMechanismTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculation Mechanism'**
+  String get pointsMechanismTitle;
+
+  /// No description provided for @pointsSimplifiedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The system is simplified: total points = sum(product assigned points × quantity in receipt). No extra settings for now.'**
+  String get pointsSimplifiedDescription;
+
+  /// No description provided for @pointsSimplificationBenefitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Simplification Benefits:'**
+  String get pointsSimplificationBenefitsTitle;
+
+  /// No description provided for @pointsSimplificationBenefitsBullet.
+  ///
+  /// In en, this message translates to:
+  /// **'• Faster performance & easier to understand\n• Avoid special-case complexity\n• Change per-product points instantly without retroactive effect unless manually applied'**
+  String get pointsSimplificationBenefitsBullet;
+
+  /// No description provided for @addOfferTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Offer'**
+  String get addOfferTitle;
+
+  /// No description provided for @offerImagePlaceholderOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer image (optional)'**
+  String get offerImagePlaceholderOptional;
+
+  /// No description provided for @pickFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'From Gallery'**
+  String get pickFromGallery;
+
+  /// No description provided for @captureWithCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture with Camera'**
+  String get captureWithCamera;
+
+  /// No description provided for @imageOptionalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Image can be left empty or you can pick/capture a new one.'**
+  String get imageOptionalNote;
+
+  /// No description provided for @offerTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer Title'**
+  String get offerTitleLabel;
+
+  /// No description provided for @offerDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer Description'**
+  String get offerDescriptionLabel;
+
+  /// No description provided for @originalPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Original Price'**
+  String get originalPriceLabel;
+
+  /// No description provided for @discountPercentageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount (%)'**
+  String get discountPercentageLabel;
+
+  /// No description provided for @discountPercentageInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter percentage 1-99'**
+  String get discountPercentageInvalid;
+
+  /// No description provided for @startDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Date'**
+  String get startDateLabel;
+
+  /// No description provided for @endDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'End Date'**
+  String get endDateLabel;
+
+  /// No description provided for @chooseGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get chooseGeneric;
+
+  /// No description provided for @pickOfferLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick offer location on map'**
+  String get pickOfferLocation;
+
+  /// No description provided for @offerLocationPicked.
+  ///
+  /// In en, this message translates to:
+  /// **'Location selected'**
+  String get offerLocationPicked;
+
+  /// No description provided for @offerTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer Type'**
+  String get offerTypeLabel;
+
+  /// No description provided for @offerTypeDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct Discount'**
+  String get offerTypeDiscount;
+
+  /// No description provided for @offerTypeGift.
+  ///
+  /// In en, this message translates to:
+  /// **'Gift with Purchase'**
+  String get offerTypeGift;
+
+  /// No description provided for @offerTypeCoupon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupon'**
+  String get offerTypeCoupon;
+
+  /// No description provided for @offerTypeLimitedTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited Time Offer'**
+  String get offerTypeLimitedTime;
+
+  /// No description provided for @offerTypeOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other...'**
+  String get offerTypeOther;
+
+  /// No description provided for @selectStartEndDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select start and end dates'**
+  String get selectStartEndDates;
+
+  /// No description provided for @offerLocationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please pick offer location on map'**
+  String get offerLocationRequired;
+
+  /// No description provided for @offerTypeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select offer type'**
+  String get offerTypeRequired;
+
+  /// No description provided for @offerAddedSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer added & synced'**
+  String get offerAddedSynced;
+
+  /// No description provided for @offerUpdatedSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer updated & synced'**
+  String get offerUpdatedSynced;
+
+  /// No description provided for @imagePickFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pick image: {error}'**
+  String imagePickFailed(String error);
+
+  /// No description provided for @savedWithSupabaseWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved (Supabase sync warning: {error})'**
+  String savedWithSupabaseWarning(String error);
+
+  /// No description provided for @offerEndsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends at: {date}'**
+  String offerEndsAt(String date);
+
+  /// No description provided for @active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get active;
+
+  /// No description provided for @storeNameNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Store name not available'**
+  String get storeNameNotAvailable;
+
+  /// No description provided for @cashierScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Cashier Screen'**
+  String get cashierScreen;
+
+  /// No description provided for @reportsAndAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports & Analytics'**
+  String get reportsAndAnalytics;
+
+  /// No description provided for @community.
+  ///
+  /// In en, this message translates to:
+  /// **'Community'**
+  String get community;
+
+  /// No description provided for @activityCafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Cafe'**
+  String get activityCafe;
+
+  /// No description provided for @activityRestaurant.
+  ///
+  /// In en, this message translates to:
+  /// **'Restaurant'**
+  String get activityRestaurant;
+
+  /// No description provided for @activityClothingStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Clothing Store'**
+  String get activityClothingStore;
+
+  /// No description provided for @activityPharmacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Pharmacy'**
+  String get activityPharmacy;
+
+  /// No description provided for @activitySupermarket.
+  ///
+  /// In en, this message translates to:
+  /// **'Supermarket'**
+  String get activitySupermarket;
+
+  /// No description provided for @activityOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get activityOther;
 }
 
 class _AppLocalizationsDelegate

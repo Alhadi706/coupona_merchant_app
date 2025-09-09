@@ -1,6 +1,6 @@
 arb-dir: lib/l10n
-# Generate directly into lib/l10n to match existing import paths in the app.
-output-dir: lib/l10n
+# Generate into lib/gen_l10n to match existing imports across the app.
+output-dir: lib/gen_l10n
 template-arb-file: app_en.arb
 output-localization-file: app_localizations.dart
 synthetic-package: false

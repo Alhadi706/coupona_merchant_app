@@ -261,4 +261,13 @@
   ,"@offerEndsAt": {"placeholders": {"date": {"type": "String"}}}
   ,"active": "Active"
   ,"storeNameNotAvailable": "Store name not available"
+  ,"cashierScreen": "Cashier Screen"
+  ,"reportsAndAnalytics": "Reports & Analytics"
+  ,"community": "Community"
+    ,"activityCafe": "Cafe"
+    ,"activityRestaurant": "Restaurant"
+    ,"activityClothingStore": "Clothing Store"
+    ,"activityPharmacy": "Pharmacy"
+    ,"activitySupermarket": "Supermarket"
+    ,"activityOther": "Other"
 }

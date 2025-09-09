@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'pick_location_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../services/session_guard.dart';
-import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:coupona_merchant/l10n/app_localizations.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class MerchantRegisterScreen extends StatefulWidget {
   const MerchantRegisterScreen({Key? key}) : super(key: key);
@@ -27,7 +25,12 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
   final TextEditingController _storeNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final List<String> activityTypes = [
-    'Cafe','Restaurant','Clothing Store','Pharmacy','Supermarket','Other'
+    'Cafe',
+    'Restaurant',
+    'Clothing Store',
+    'Pharmacy',
+    'Supermarket',
+    'Other'
   ];
   String selectedActivity = 'Cafe';
   bool useOtherActivity = false;
@@ -37,7 +40,12 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
 
   // خريطة رموز النشاط بالإنجليزي
   final Map<String, String> activityTypeCodes = {
-    'Cafe': 'CF', 'Restaurant': 'TR', 'Clothing Store': 'CL', 'Pharmacy': 'PH', 'Supermarket': 'SM', 'Other': 'OT'
+    'Cafe': 'CF',
+    'Restaurant': 'TR',
+    'Clothing Store': 'CL',
+    'Pharmacy': 'PH',
+    'Supermarket': 'SM',
+    'Other': 'OT',
   };
 
   Future<void> _register() async {
@@ -390,14 +398,19 @@ class _MerchantRegisterScreenState extends State<MerchantRegisterScreen> {
 
   String _localizedActivity(String key, AppLocalizations? loc) {
     if (loc == null) return key;
-    final isAr = loc.localeName.startsWith('ar');
     switch (key) {
-      case 'Cafe': return isAr ? 'مقهى' : 'Cafe';
-      case 'Restaurant': return isAr ? 'مطعم' : 'Restaurant';
-      case 'Clothing Store': return isAr ? 'متجر ملابس' : 'Clothing Store';
-      case 'Pharmacy': return isAr ? 'صيدلية' : 'Pharmacy';
-      case 'Supermarket': return isAr ? 'سوبرماركت' : 'Supermarket';
-      case 'Other': return loc.otherActivityLabel;
+      case 'Cafe':
+        return loc.activityCafe;
+      case 'Restaurant':
+        return loc.activityRestaurant;
+      case 'Clothing Store':
+        return loc.activityClothingStore;
+      case 'Pharmacy':
+        return loc.activityPharmacy;
+      case 'Supermarket':
+        return loc.activitySupermarket;
+      case 'Other':
+        return loc.activityOther;
     }
     return key;
   }

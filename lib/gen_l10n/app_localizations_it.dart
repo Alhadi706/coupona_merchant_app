@@ -588,4 +588,207 @@ class AppLocalizationsIt extends AppLocalizations {
   String customerLabel(String name) {
     return 'Cliente: $name';
   }
+
+  @override
+  String get registerNewMerchantTitle => 'Registrazione nuovo commerciante';
+
+  @override
+  String get activityOtherPrompt => 'Specifica altra attività';
+
+  @override
+  String get pickStoreOnMap => 'Seleziona posizione su mappa';
+
+  @override
+  String get storeLocationPicked => 'Posizione selezionata';
+
+  @override
+  String get autoLocating => 'Localizzazione...';
+
+  @override
+  String get autoLocateButton => 'Localizza auto';
+
+  @override
+  String get submitRegister => 'Registrati';
+
+  @override
+  String get locationServiceDisabled => 'Servizio localizzazione disattivato';
+
+  @override
+  String get locationPermissionDenied => 'Permesso localizzazione negato';
+
+  @override
+  String get locationPermissionDeniedForever =>
+      'Permesso localizzazione negato permanentemente. Apri impostazioni.';
+
+  @override
+  String get locationAutoCaptured => 'Posizione catturata automaticamente';
+
+  @override
+  String locationFailed(String error) {
+    return 'Localizzazione fallita: $error';
+  }
+
+  @override
+  String get completeProfileTitle => 'Completa Profilo';
+
+  @override
+  String get mustLoginFirst => 'Devi prima accedere';
+
+  @override
+  String get profileSavedSuccess => 'Profilo salvato con successo!';
+
+  @override
+  String genericErrorWithMessage(String message) {
+    return 'Errore: $message';
+  }
+
+  @override
+  String get requiredField => 'Campo obbligatorio';
+
+  @override
+  String get save => 'Salva';
+
+  @override
+  String get pointsSystemTitle => 'Sistema punti';
+
+  @override
+  String get pointsMechanismTitle => 'Meccanismo di calcolo';
+
+  @override
+  String get pointsSimplifiedDescription =>
+      'Sistema semplificato: punti totali = somma(punti assegnati × quantità nel ricevuta). Nessuna altra impostazione ora.';
+
+  @override
+  String get pointsSimplificationBenefitsTitle => 'Vantaggi semplificazione:';
+
+  @override
+  String get pointsSimplificationBenefitsBullet =>
+      '• Performance più veloce e facile da capire\n• Evita complessità casi speciali\n• Cambio punti prodotto immediato senza effetto retroattivo salvo manuale';
+
+  @override
+  String get addOfferTitle => 'Nuova offerta';
+
+  @override
+  String get offerImagePlaceholderOptional => 'Immagine offerta (opzionale)';
+
+  @override
+  String get pickFromGallery => 'Dalla galleria';
+
+  @override
+  String get captureWithCamera => 'Scatta foto';
+
+  @override
+  String get imageOptionalNote =>
+      'L\'immagine può restare vuota oppure sceglierne/scattarne una.';
+
+  @override
+  String get offerTitleLabel => 'Titolo offerta';
+
+  @override
+  String get offerDescriptionLabel => 'Descrizione offerta';
+
+  @override
+  String get originalPriceLabel => 'Prezzo originale';
+
+  @override
+  String get discountPercentageLabel => 'Sconto (%)';
+
+  @override
+  String get discountPercentageInvalid => 'Inserisci percentuale 1-99';
+
+  @override
+  String get startDateLabel => 'Data inizio';
+
+  @override
+  String get endDateLabel => 'Data fine';
+
+  @override
+  String get chooseGeneric => 'Scegli';
+
+  @override
+  String get pickOfferLocation => 'Seleziona posizione su mappa';
+
+  @override
+  String get offerLocationPicked => 'Posizione selezionata';
+
+  @override
+  String get offerTypeLabel => 'Tipo offerta';
+
+  @override
+  String get offerTypeDiscount => 'Sconto diretto';
+
+  @override
+  String get offerTypeGift => 'Regalo con acquisto';
+
+  @override
+  String get offerTypeCoupon => 'Coupon';
+
+  @override
+  String get offerTypeLimitedTime => 'Offerta a tempo';
+
+  @override
+  String get offerTypeOther => 'Altro...';
+
+  @override
+  String get selectStartEndDates => 'Seleziona date inizio e fine';
+
+  @override
+  String get offerLocationRequired => 'Seleziona posizione offerta';
+
+  @override
+  String get offerTypeRequired => 'Seleziona tipo offerta';
+
+  @override
+  String get offerAddedSynced => 'Offerta aggiunta e sincronizzata';
+
+  @override
+  String get offerUpdatedSynced => 'Offerta aggiornata e sincronizzata';
+
+  @override
+  String imagePickFailed(String error) {
+    return 'Immagine non selezionata: $error';
+  }
+
+  @override
+  String savedWithSupabaseWarning(String error) {
+    return 'Salvato (avviso sync Supabase: $error)';
+  }
+
+  @override
+  String offerEndsAt(String date) {
+    return 'Termina il: $date';
+  }
+
+  @override
+  String get active => 'Attivo';
+
+  @override
+  String get storeNameNotAvailable => 'Nome negozio non disponibile';
+
+  @override
+  String get cashierScreen => 'Schermo cassa';
+
+  @override
+  String get reportsAndAnalytics => 'Report e analisi';
+
+  @override
+  String get community => 'Comunità';
+
+  @override
+  String get activityCafe => 'Caffetteria';
+
+  @override
+  String get activityRestaurant => 'Ristorante';
+
+  @override
+  String get activityClothingStore => 'Negozio di abbigliamento';
+
+  @override
+  String get activityPharmacy => 'Farmacia';
+
+  @override
+  String get activitySupermarket => 'Supermercato';
+
+  @override
+  String get activityOther => 'Altro';
 }

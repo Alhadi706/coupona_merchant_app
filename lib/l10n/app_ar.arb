@@ -260,4 +260,13 @@
   ,"@offerEndsAt": {"placeholders": {"date": {"type": "String"}}}
   ,"active": "مفعل"
   ,"storeNameNotAvailable": "اسم المحل غير متوفر"
+  ,"cashierScreen": "شاشة الكاشير"
+  ,"reportsAndAnalytics": "التقارير والتحليلات"
+  ,"community": "المجتمع"
+  ,"activityCafe": "مقهى"
+  ,"activityRestaurant": "مطعم"
+  ,"activityClothingStore": "متجر ملابس"
+  ,"activityPharmacy": "صيدلية"
+  ,"activitySupermarket": "سوبرماركت"
+  ,"activityOther": "آخر"
   }

@@ -38,6 +38,12 @@
   "phoneLabel": "Telefono",
   "activityTypeLabel": "Tipo Attività",
   "otherActivityLabel": "Altro",
+  "activityCafe": "Caffetteria",
+  "activityRestaurant": "Ristorante",
+  "activityClothingStore": "Negozio di abbigliamento",
+  "activityPharmacy": "Farmacia",
+  "activitySupermarket": "Supermercato",
+  "activityOther": "Altro",
   "locationLabel": "Posizione",
   "registerButton": "Registrati",
   "selectLocationButton": "Seleziona posizione",
@@ -260,4 +266,7 @@
   ,"@offerEndsAt": {"placeholders": {"date": {"type": "String"}}}
   ,"active": "Attivo"
   ,"storeNameNotAvailable": "Nome negozio non disponibile"
+  ,"cashierScreen": "Schermo cassa"
+  ,"reportsAndAnalytics": "Report e analisi"
+  ,"community": "Comunità"
  }

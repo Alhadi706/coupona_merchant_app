@@ -260,4 +260,13 @@
   ,"@offerEndsAt": {"placeholders": {"date": {"type": "String"}}}
   ,"active": "Aktif"
   ,"storeNameNotAvailable": "Mağaza adı mevcut değil"
+  ,"cashierScreen": "Kasiyer ekranı"
+  ,"reportsAndAnalytics": "Raporlar ve analiz"
+  ,"community": "Topluluk"
+  ,"activityCafe": "Kafe"
+  ,"activityRestaurant": "Restoran"
+  ,"activityClothingStore": "Giyim mağazası"
+  ,"activityPharmacy": "Eczane"
+  ,"activitySupermarket": "Süpermarket"
+  ,"activityOther": "Diğer"
  }

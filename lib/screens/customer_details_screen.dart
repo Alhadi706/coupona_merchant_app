@@ -61,6 +61,7 @@ class _CustomerOrders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  final loc = AppLocalizations.of(context);
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('orders')
@@ -82,7 +83,7 @@ class _CustomerOrders extends StatelessWidget {
               leading: const Icon(Icons.shopping_cart, color: Colors.green),
               title: Text(AppLocalizations.of(context)?.orderNumber(doc.id) ?? 'Order #: ${doc.id}'),
               subtitle: Text(
-                '${AppLocalizations.of(context)?.dateLabel((data['created_at'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-')}\n${AppLocalizations.of(context)?.amountLabel((data['total'] ?? '-').toString())}',
+                '${(loc?.dateLabel((data['created_at'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-') ?? '')}\n${(loc?.amountLabel((data['total'] ?? '-').toString()) ?? '')}',
               ),
             );
           }).toList(),
@@ -98,6 +99,7 @@ class _CustomerRewards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  final loc = AppLocalizations.of(context);
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('redeemed_rewards')
@@ -110,7 +112,7 @@ class _CustomerRewards extends StatelessWidget {
         }
         final rewards = snapshot.data!.docs;
         if (rewards.isEmpty) {
-      return Text(loc?.noRewardsYet ?? 'No rewards');
+          return Text(loc?.noRewardsYet ?? 'No rewards');
         }
         return Column(
           children: rewards.map((doc) {
@@ -118,7 +120,7 @@ class _CustomerRewards extends StatelessWidget {
             return ListTile(
               leading: const Icon(Icons.card_giftcard, color: Colors.purple),
               title: Text(data['rewardName'] ?? ''),
-        subtitle: Text(AppLocalizations.of(context)?.dateLabel((data['redeemedAt'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-') ?? ''),
+              subtitle: Text(loc?.dateLabel((data['redeemedAt'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-') ?? ''),
             );
           }).toList(),
         );
@@ -133,6 +135,7 @@ class _CustomerReceipts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  final loc = AppLocalizations.of(context);
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('receipts')
@@ -152,9 +155,9 @@ class _CustomerReceipts extends StatelessWidget {
             final data = doc.data() as Map<String, dynamic>;
             return ListTile(
               leading: const Icon(Icons.receipt_long, color: Colors.orange),
-              title: Text(AppLocalizations.of(context)?.invoiceNumber(doc.id) ?? 'Invoice #: ${doc.id}'),
+              title: Text(loc?.invoiceNumber(doc.id) ?? 'Invoice #: ${doc.id}'),
               subtitle: Text(
-                '${AppLocalizations.of(context)?.dateLabel((data['createdAt'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-')}\n${AppLocalizations.of(context)?.amountLabel((data['total'] ?? '-').toString())}',
+                '${(loc?.dateLabel((data['createdAt'] as Timestamp?)?.toDate().toString().substring(0, 16) ?? '-') ?? '')}\n${(loc?.amountLabel((data['total'] ?? '-').toString()) ?? '')}',
               ),
             );
           }).toList(),
@@ -170,6 +173,7 @@ class _CustomerOffers extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _fetchOffers(),
       builder: (context, snapshot) {

@@ -6,7 +6,7 @@ import 'package:hive/hive.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:coupona_merchant/widgets/home_button.dart';
-import 'package:coupona_merchant/l10n/app_localizations.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 import '../widgets/address_from_latlng.dart';
 

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:coupona_merchant/services/auth_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:coupona_merchant/l10n/app_localizations.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';

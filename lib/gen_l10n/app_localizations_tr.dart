@@ -588,4 +588,208 @@ class AppLocalizationsTr extends AppLocalizations {
   String customerLabel(String name) {
     return 'Müşteri: $name';
   }
+
+  @override
+  String get registerNewMerchantTitle => 'Yeni Mağaza Kaydı';
+
+  @override
+  String get activityOtherPrompt => 'Diğer faaliyeti belirt';
+
+  @override
+  String get pickStoreOnMap => 'Haritada konumu seç';
+
+  @override
+  String get storeLocationPicked => 'Konum seçildi';
+
+  @override
+  String get autoLocating => 'Konum alınıyor...';
+
+  @override
+  String get autoLocateButton => 'Oto konum';
+
+  @override
+  String get submitRegister => 'Kayıt ol';
+
+  @override
+  String get locationServiceDisabled => 'Konum servisi kapalı';
+
+  @override
+  String get locationPermissionDenied => 'Konum izni reddedildi';
+
+  @override
+  String get locationPermissionDeniedForever =>
+      'Konum izni kalıcı reddedildi. Ayarları açın.';
+
+  @override
+  String get locationAutoCaptured => 'Konum otomatik alındı';
+
+  @override
+  String locationFailed(String error) {
+    return 'Konum alınamadı: $error';
+  }
+
+  @override
+  String get completeProfileTitle => 'Profili Tamamla';
+
+  @override
+  String get mustLoginFirst => 'Önce giriş yapmalısın';
+
+  @override
+  String get profileSavedSuccess => 'Profil başarıyla kaydedildi!';
+
+  @override
+  String genericErrorWithMessage(String message) {
+    return 'Hata: $message';
+  }
+
+  @override
+  String get requiredField => 'Zorunlu alan';
+
+  @override
+  String get save => 'Kaydet';
+
+  @override
+  String get pointsSystemTitle => 'Puan Sistemi';
+
+  @override
+  String get pointsMechanismTitle => 'Hesaplama Mekanizması';
+
+  @override
+  String get pointsSimplifiedDescription =>
+      'Basitleştirilmiş sistem: toplam puan = toplam(ürün puanı × fişteki miktar). Şimdilik ek ayar yok.';
+
+  @override
+  String get pointsSimplificationBenefitsTitle => 'Basitleştirmenin Faydaları:';
+
+  @override
+  String get pointsSimplificationBenefitsBullet =>
+      '• Daha hızlı performans & anlaşılır\n• Özel durum karmaşıklığını önler\n• Ürün puanı değişimi anında etkili geriye dönük etki yok (manuel hariç)';
+
+  @override
+  String get addOfferTitle => 'Yeni teklif';
+
+  @override
+  String get offerImagePlaceholderOptional => 'Teklif resmi (opsiyonel)';
+
+  @override
+  String get pickFromGallery => 'Galeriden';
+
+  @override
+  String get captureWithCamera => 'Kamera ile';
+
+  @override
+  String get imageOptionalNote =>
+      'Resim boş bırakılabilir veya yeni seçilebilir/çekilebilir.';
+
+  @override
+  String get offerTitleLabel => 'Teklif başlığı';
+
+  @override
+  String get offerDescriptionLabel => 'Teklif açıklaması';
+
+  @override
+  String get originalPriceLabel => 'Orijinal fiyat';
+
+  @override
+  String get discountPercentageLabel => 'İndirim (%)';
+
+  @override
+  String get discountPercentageInvalid => '1-99 arası girin';
+
+  @override
+  String get startDateLabel => 'Başlangıç tarihi';
+
+  @override
+  String get endDateLabel => 'Bitiş tarihi';
+
+  @override
+  String get chooseGeneric => 'Seç';
+
+  @override
+  String get pickOfferLocation => 'Haritada teklif konumu seç';
+
+  @override
+  String get offerLocationPicked => 'Konum seçildi';
+
+  @override
+  String get offerTypeLabel => 'Teklif türü';
+
+  @override
+  String get offerTypeDiscount => 'Doğrudan indirim';
+
+  @override
+  String get offerTypeGift => 'Alışverişe hediye';
+
+  @override
+  String get offerTypeCoupon => 'Kupon';
+
+  @override
+  String get offerTypeLimitedTime => 'Süreli teklif';
+
+  @override
+  String get offerTypeOther => 'Diğer...';
+
+  @override
+  String get selectStartEndDates =>
+      'Lütfen başlangıç ve bitiş tarihlerini seçin';
+
+  @override
+  String get offerLocationRequired => 'Lütfen teklif konumunu seçin';
+
+  @override
+  String get offerTypeRequired => 'Lütfen teklif türünü seçin';
+
+  @override
+  String get offerAddedSynced => 'Teklif eklendi & senkron';
+
+  @override
+  String get offerUpdatedSynced => 'Teklif güncellendi & senkron';
+
+  @override
+  String imagePickFailed(String error) {
+    return 'Resim seçilemedi: $error';
+  }
+
+  @override
+  String savedWithSupabaseWarning(String error) {
+    return 'Kaydedildi (Supabase uyarısı: $error)';
+  }
+
+  @override
+  String offerEndsAt(String date) {
+    return 'Biter: $date';
+  }
+
+  @override
+  String get active => 'Aktif';
+
+  @override
+  String get storeNameNotAvailable => 'Mağaza adı mevcut değil';
+
+  @override
+  String get cashierScreen => 'Kasiyer ekranı';
+
+  @override
+  String get reportsAndAnalytics => 'Raporlar ve analiz';
+
+  @override
+  String get community => 'Topluluk';
+
+  @override
+  String get activityCafe => 'Kafe';
+
+  @override
+  String get activityRestaurant => 'Restoran';
+
+  @override
+  String get activityClothingStore => 'Giyim mağazası';
+
+  @override
+  String get activityPharmacy => 'Eczane';
+
+  @override
+  String get activitySupermarket => 'Süpermarket';
+
+  @override
+  String get activityOther => 'Diğer';
 }

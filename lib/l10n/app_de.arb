@@ -260,4 +260,13 @@
   ,"@offerEndsAt": {"placeholders": {"date": {"type": "String"}}}
   ,"active": "Aktiv"
   ,"storeNameNotAvailable": "Geschäftsname nicht verfügbar"
+  ,"cashierScreen": "Kassierer-Bildschirm"
+  ,"reportsAndAnalytics": "Berichte & Analysen"
+  ,"community": "Community"
+  ,"activityCafe": "Café"
+  ,"activityRestaurant": "Restaurant"
+  ,"activityClothingStore": "Bekleidungsgeschäft"
+  ,"activityPharmacy": "Apotheke"
+  ,"activitySupermarket": "Supermarkt"
+  ,"activityOther": "Andere"
  }

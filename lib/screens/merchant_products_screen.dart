@@ -6,7 +6,7 @@ import 'package:coupona_merchant/widgets/home_button.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'package:csv/csv.dart';
-import 'package:coupona_merchant/l10n/app_localizations.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 import '../models/points_scheme.dart';
 import '../services/points_service.dart';
 import '../services/product_search_service.dart';

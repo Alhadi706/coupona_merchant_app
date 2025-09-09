@@ -591,4 +591,207 @@ class AppLocalizationsEn extends AppLocalizations {
   String customerLabel(String name) {
     return 'Customer: $name';
   }
+
+  @override
+  String get registerNewMerchantTitle => 'New Merchant Registration';
+
+  @override
+  String get activityOtherPrompt => 'Specify other activity';
+
+  @override
+  String get pickStoreOnMap => 'Pick store location on map';
+
+  @override
+  String get storeLocationPicked => 'Location selected';
+
+  @override
+  String get autoLocating => 'Locating...';
+
+  @override
+  String get autoLocateButton => 'Auto locate';
+
+  @override
+  String get submitRegister => 'Register';
+
+  @override
+  String get locationServiceDisabled => 'Location service disabled';
+
+  @override
+  String get locationPermissionDenied => 'Location permission denied';
+
+  @override
+  String get locationPermissionDeniedForever =>
+      'Location permission permanently denied. Open settings.';
+
+  @override
+  String get locationAutoCaptured => 'Location captured automatically';
+
+  @override
+  String locationFailed(String error) {
+    return 'Failed to get location: $error';
+  }
+
+  @override
+  String get completeProfileTitle => 'Complete Profile';
+
+  @override
+  String get mustLoginFirst => 'You must login first';
+
+  @override
+  String get profileSavedSuccess => 'Profile saved successfully!';
+
+  @override
+  String genericErrorWithMessage(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get requiredField => 'Field is required';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get pointsSystemTitle => 'Points System';
+
+  @override
+  String get pointsMechanismTitle => 'Calculation Mechanism';
+
+  @override
+  String get pointsSimplifiedDescription =>
+      'The system is simplified: total points = sum(product assigned points × quantity in receipt). No extra settings for now.';
+
+  @override
+  String get pointsSimplificationBenefitsTitle => 'Simplification Benefits:';
+
+  @override
+  String get pointsSimplificationBenefitsBullet =>
+      '• Faster performance & easier to understand\n• Avoid special-case complexity\n• Change per-product points instantly without retroactive effect unless manually applied';
+
+  @override
+  String get addOfferTitle => 'Add New Offer';
+
+  @override
+  String get offerImagePlaceholderOptional => 'Offer image (optional)';
+
+  @override
+  String get pickFromGallery => 'From Gallery';
+
+  @override
+  String get captureWithCamera => 'Capture with Camera';
+
+  @override
+  String get imageOptionalNote =>
+      'Image can be left empty or you can pick/capture a new one.';
+
+  @override
+  String get offerTitleLabel => 'Offer Title';
+
+  @override
+  String get offerDescriptionLabel => 'Offer Description';
+
+  @override
+  String get originalPriceLabel => 'Original Price';
+
+  @override
+  String get discountPercentageLabel => 'Discount (%)';
+
+  @override
+  String get discountPercentageInvalid => 'Enter percentage 1-99';
+
+  @override
+  String get startDateLabel => 'Start Date';
+
+  @override
+  String get endDateLabel => 'End Date';
+
+  @override
+  String get chooseGeneric => 'Choose';
+
+  @override
+  String get pickOfferLocation => 'Pick offer location on map';
+
+  @override
+  String get offerLocationPicked => 'Location selected';
+
+  @override
+  String get offerTypeLabel => 'Offer Type';
+
+  @override
+  String get offerTypeDiscount => 'Direct Discount';
+
+  @override
+  String get offerTypeGift => 'Gift with Purchase';
+
+  @override
+  String get offerTypeCoupon => 'Coupon';
+
+  @override
+  String get offerTypeLimitedTime => 'Limited Time Offer';
+
+  @override
+  String get offerTypeOther => 'Other...';
+
+  @override
+  String get selectStartEndDates => 'Please select start and end dates';
+
+  @override
+  String get offerLocationRequired => 'Please pick offer location on map';
+
+  @override
+  String get offerTypeRequired => 'Please select offer type';
+
+  @override
+  String get offerAddedSynced => 'Offer added & synced';
+
+  @override
+  String get offerUpdatedSynced => 'Offer updated & synced';
+
+  @override
+  String imagePickFailed(String error) {
+    return 'Failed to pick image: $error';
+  }
+
+  @override
+  String savedWithSupabaseWarning(String error) {
+    return 'Saved (Supabase sync warning: $error)';
+  }
+
+  @override
+  String offerEndsAt(String date) {
+    return 'Ends at: $date';
+  }
+
+  @override
+  String get active => 'Active';
+
+  @override
+  String get storeNameNotAvailable => 'Store name not available';
+
+  @override
+  String get cashierScreen => 'Cashier Screen';
+
+  @override
+  String get reportsAndAnalytics => 'Reports & Analytics';
+
+  @override
+  String get community => 'Community';
+
+  @override
+  String get activityCafe => 'Cafe';
+
+  @override
+  String get activityRestaurant => 'Restaurant';
+
+  @override
+  String get activityClothingStore => 'Clothing Store';
+
+  @override
+  String get activityPharmacy => 'Pharmacy';
+
+  @override
+  String get activitySupermarket => 'Supermarket';
+
+  @override
+  String get activityOther => 'Other';
 }

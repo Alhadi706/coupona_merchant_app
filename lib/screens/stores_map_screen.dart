@@ -33,15 +33,15 @@ class StoresMapScreen extends StatelessWidget {
                   width: 40,
                   height: 40,
                   point: LatLng(loc['lat'], loc['lng']),
-                  builder: (ctx) => Icon(Icons.location_on, color: Colors.deepPurple, size: 36),
+                  child: const Icon(Icons.location_on, color: Colors.deepPurple, size: 36),
                 ),
               );
             }
           }
           return FlutterMap(
             options: MapOptions(
-              center: LatLng(32.8872, 13.1913),
-              zoom: 11,
+              initialCenter: LatLng(32.8872, 13.1913),
+              initialZoom: 11,
             ),
             children: [
               TileLayer(

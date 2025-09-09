@@ -34,13 +34,8 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
     const MerchantReceiptsScreen(),
   ];
 
-  final List<String> _screenTitles = [
-    'الرئيسية',
-    'العروض',
-    'الزبائن',
-    'المنتجات',
-    'الإيصالات',
-  ];
+  // Titles are resolved via _localizedTitle to follow current locale
+  final List<String> _screenTitles = const ['', '', '', '', ''];
 
   @override
   void initState() {
@@ -159,7 +154,10 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                     GestureDetector(
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: _merchantCode!));
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ رمز التاجر')));
+                        final loc = AppLocalizations.of(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(loc?.copiedMerchantCode ?? 'Merchant code copied')),
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -209,7 +207,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                     ),
                 ],
               )
-            : Text(_screenTitles[_selectedIndex]),
+            : Text(_localizedTitle(context, _selectedIndex)),
         actions: [
           // اختيار اللغة السريع
           Builder(builder: (ctx) {

@@ -592,4 +592,207 @@ class AppLocalizationsAr extends AppLocalizations {
   String customerLabel(String name) {
     return 'زبون: $name';
   }
+
+  @override
+  String get registerNewMerchantTitle => 'تسجيل تاجر جديد';
+
+  @override
+  String get activityOtherPrompt => 'حدد نشاط آخر';
+
+  @override
+  String get pickStoreOnMap => 'حدد موقع المحل على الخريطة';
+
+  @override
+  String get storeLocationPicked => 'تم اختيار الموقع';
+
+  @override
+  String get autoLocating => 'جارٍ تحديد الموقع...';
+
+  @override
+  String get autoLocateButton => 'تحديد الموقع تلقائياً';
+
+  @override
+  String get submitRegister => 'تسجيل';
+
+  @override
+  String get locationServiceDisabled => 'خدمة الموقع معطلة';
+
+  @override
+  String get locationPermissionDenied => 'تم رفض إذن الموقع';
+
+  @override
+  String get locationPermissionDeniedForever =>
+      'تم رفض إذن الموقع نهائياً. افتح الإعدادات.';
+
+  @override
+  String get locationAutoCaptured => 'تم التقاط الموقع تلقائياً';
+
+  @override
+  String locationFailed(String error) {
+    return 'فشل جلب الموقع: $error';
+  }
+
+  @override
+  String get completeProfileTitle => 'إكمال الملف الشخصي';
+
+  @override
+  String get mustLoginFirst => 'يجب تسجيل الدخول أولاً';
+
+  @override
+  String get profileSavedSuccess => 'تم حفظ الملف بنجاح!';
+
+  @override
+  String genericErrorWithMessage(String message) {
+    return 'خطأ: $message';
+  }
+
+  @override
+  String get requiredField => 'الحقل مطلوب';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get pointsSystemTitle => 'نظام النقاط';
+
+  @override
+  String get pointsMechanismTitle => 'آلية الحساب';
+
+  @override
+  String get pointsSimplifiedDescription =>
+      'النظام مبسّط: إجمالي النقاط = مجموع (النقاط المحددة للمنتج × الكمية في الفاتورة). لا إعدادات إضافية حالياً.';
+
+  @override
+  String get pointsSimplificationBenefitsTitle => 'مزايا التبسيط:';
+
+  @override
+  String get pointsSimplificationBenefitsBullet =>
+      '• أداء أسرع وأسهل للفهم\n• تجنب التعقيد للحالات الخاصة\n• تغيير نقاط المنتج يُطبق فوراً بدون أثر رجعي إلا إذا طُبق يدوياً';
+
+  @override
+  String get addOfferTitle => 'إضافة عرض جديد';
+
+  @override
+  String get offerImagePlaceholderOptional => 'صورة العرض (اختيارية)';
+
+  @override
+  String get pickFromGallery => 'من الاستوديو';
+
+  @override
+  String get captureWithCamera => 'التقاط بالكاميرا';
+
+  @override
+  String get imageOptionalNote =>
+      'يمكن ترك الصورة فارغة، أو اختيار/التقاط صورة جديدة.';
+
+  @override
+  String get offerTitleLabel => 'عنوان العرض';
+
+  @override
+  String get offerDescriptionLabel => 'وصف العرض';
+
+  @override
+  String get originalPriceLabel => 'السعر الأصلي';
+
+  @override
+  String get discountPercentageLabel => 'نسبة الخصم (%)';
+
+  @override
+  String get discountPercentageInvalid => 'ادخل نسبة بين 1-99';
+
+  @override
+  String get startDateLabel => 'تاريخ البدء';
+
+  @override
+  String get endDateLabel => 'تاريخ الانتهاء';
+
+  @override
+  String get chooseGeneric => 'اختيار';
+
+  @override
+  String get pickOfferLocation => 'حدد موقع العرض على الخريطة';
+
+  @override
+  String get offerLocationPicked => 'تم اختيار الموقع';
+
+  @override
+  String get offerTypeLabel => 'نوع العرض';
+
+  @override
+  String get offerTypeDiscount => 'خصم مباشر';
+
+  @override
+  String get offerTypeGift => 'هدية مع الشراء';
+
+  @override
+  String get offerTypeCoupon => 'كوبون';
+
+  @override
+  String get offerTypeLimitedTime => 'عرض لفترة محدودة';
+
+  @override
+  String get offerTypeOther => 'آخر...';
+
+  @override
+  String get selectStartEndDates => 'الرجاء تحديد تاريخ البدء والانتهاء';
+
+  @override
+  String get offerLocationRequired => 'يرجى اختيار موقع العرض على الخريطة';
+
+  @override
+  String get offerTypeRequired => 'يرجى اختيار نوع العرض';
+
+  @override
+  String get offerAddedSynced => 'تم إضافة العرض ومزامنته';
+
+  @override
+  String get offerUpdatedSynced => 'تم تحديث العرض ومزامنته';
+
+  @override
+  String imagePickFailed(String error) {
+    return 'تعذر التقاط/اختيار الصورة: $error';
+  }
+
+  @override
+  String savedWithSupabaseWarning(String error) {
+    return 'تم الحفظ (تحذير مزامنة Supabase: $error)';
+  }
+
+  @override
+  String offerEndsAt(String date) {
+    return 'ينتهي في: $date';
+  }
+
+  @override
+  String get active => 'مفعل';
+
+  @override
+  String get storeNameNotAvailable => 'اسم المحل غير متوفر';
+
+  @override
+  String get cashierScreen => 'شاشة الكاشير';
+
+  @override
+  String get reportsAndAnalytics => 'التقارير والتحليلات';
+
+  @override
+  String get community => 'المجتمع';
+
+  @override
+  String get activityCafe => 'مقهى';
+
+  @override
+  String get activityRestaurant => 'مطعم';
+
+  @override
+  String get activityClothingStore => 'متجر ملابس';
+
+  @override
+  String get activityPharmacy => 'صيدلية';
+
+  @override
+  String get activitySupermarket => 'سوبرماركت';
+
+  @override
+  String get activityOther => 'آخر';
 }

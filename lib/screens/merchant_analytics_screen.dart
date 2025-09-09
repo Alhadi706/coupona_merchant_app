@@ -33,22 +33,22 @@ class MerchantAnalyticsScreen extends StatelessWidget {
       // Additional features (not yet localized keys created): keep Arabic fallback or add new keys later.
       {
         'icon': Icons.point_of_sale,
-        'label': 'شاشة الكاشير',
+        'label': loc?.cashierScreen ?? 'Cashier Screen',
         'path': '/dashboard/cashier'
       },
       {
         'icon': Icons.card_giftcard,
-        'label': 'إدارة الجوائز',
+        'label': loc?.manageRewardsTitle ?? 'Manage Rewards',
         'path': '/dashboard/rewards'
       },
       {
         'icon': Icons.bar_chart,
-        'label': 'التقارير والتحليلات',
+        'label': loc?.reportsAndAnalytics ?? 'Reports & Analytics',
         'path': '/dashboard/reports'
       },
       {
         'icon': Icons.forum,
-        'label': 'المجتمع',
+        'label': loc?.community ?? 'Community',
         'path': '/dashboard/community'
       },
       {

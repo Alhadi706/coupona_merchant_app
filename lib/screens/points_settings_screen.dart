@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/points_service.dart';
 import '../models/points_scheme.dart';
 import '../widgets/home_button.dart';
-import 'package:coupona_merchant/l10n/app_localizations.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 
 class PointsSettingsScreen extends StatefulWidget {
