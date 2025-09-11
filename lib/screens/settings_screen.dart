@@ -3,10 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:coupona_merchant/widgets/home_button.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart'; // إزالة الاعتماد على حزمة supabase
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:hive/hive.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,11 +19,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
   Map<String, dynamic>? _data;
   File? _logoFile;
-  String? _fetchError; // متغير جديد لتخزين رسالة الخطأ
+  String? _fetchError;
 
-  // قائمة الفئات المقترحة
   final List<String> activityTypes = [
-    'متجر ملابس', // تصحيح: توحيد القيمة مع ما هو موجود في قاعدة البيانات
+    // These will later be mapped/translated via localization if needed.
+    'متجر ملابس',
     'مطعم',
     'مقهى',
     'سوبرماركت',
@@ -42,49 +42,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _fetchData() async {
     setState(() {
       _loading = true;
-      _fetchError = null; // إعادة تعيين الخطأ عند كل محاولة
+      _fetchError = null;
     });
     final user = FirebaseAuth.instance.currentUser;
-    print('DEBUG: Attempting to fetch data for user: ${user?.uid}');
 
     if (user == null) {
-      print('DEBUG: No user is logged in.');
       setState(() {
         _data = null;
         _loading = false;
-        _fetchError = 'المستخدم غير مسجل دخوله. يرجى إعادة تسجيل الدخول.';
+        _fetchError = AppLocalizations.of(context)?.settingsUserNotLoggedIn;
       });
       return;
     }
 
     try {
-      final merchantDoc = await FirebaseFirestore.instance
-          .collection('merchants')
-          .doc(user.uid)
-          .get();
+      final merchantDoc = await FirebaseFirestore.instance.collection('merchants').doc(user.uid).get();
 
       if (merchantDoc.exists) {
-        print('DEBUG: Data found for user: ${user.uid}');
         setState(() {
           _data = merchantDoc.data();
           _data!['id'] = merchantDoc.id;
           _loading = false;
         });
       } else {
-        print('DEBUG: No data for user ${user.uid}. Creating a new profile.');
         final newData = {
           'id': user.uid,
-          'email': user.email ?? '',
-          'store_name': '',
-          'activity_type': null,
-          'phone': '',
-          'location': '',
-          'whatsapp': '',
-          'facebook': '',
-          'instagram': '',
-          'description': '',
-          'logo_url': null,
-          'created_at': Timestamp.now(),
+            'email': user.email ?? '',
+            'store_name': '',
+            'activity_type': null,
+            'phone': '',
+            'location': '',
+            'whatsapp': '',
+            'facebook': '',
+            'instagram': '',
+            'description': '',
+            'logo_url': null,
+            'created_at': Timestamp.now(),
         };
         await FirebaseFirestore.instance.collection('merchants').doc(user.uid).set(newData);
         setState(() {
@@ -92,18 +85,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _loading = false;
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم إنشاء ملف تعريفي جديد. يرجى تعبئة بيانات متجرك.')),
-          );
+          final loc = AppLocalizations.of(context);
+          if (loc != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(loc.profileCreatedPrompt)),
+            );
+          }
         }
       }
     } catch (e, stack) {
-      final errorMessage =
-          'فشل الاتصال بقاعدة البيانات. تحقق من اتصالك بالإنترنت أو إعدادات Firestore.';
-      print('!!! FETCH ERROR: $e\n$stack');
+      final loc = AppLocalizations.of(context);
+      final errorMessage = loc?.firestoreFetchFailed ?? 'Error';
       setState(() {
         _data = null;
-        _fetchError = '$errorMessage\n\nتفاصيل الخطأ الفني:\n$e'; // تخزين الخطأ لعرضه
+        _fetchError = '$errorMessage\n\n$e';
         _loading = false;
       });
     }
@@ -119,12 +114,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _uploadLogo() async {
     if (_logoFile == null) return;
-    // استخدام Firebase Auth
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     final fileName = 'merchant_logos/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.png';
-    // استخدام Firebase Storage
     final storageRef = FirebaseStorage.instance.ref().child(fileName);
 
     try {
@@ -133,70 +126,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() => _data!['logo_url'] = url);
       await _saveSettings(showMsg: false);
     } catch (e) {
-      print('Error uploading logo: $e');
-      // معالجة الخطأ هنا إذا لزم الأمر
+      // Could add localized error snackbar if desired
     }
   }
 
   Future<void> _saveSettings({bool showMsg = true}) async {
-    // استخدام Firebase Auth
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && _data != null) {
       try {
-        // لا حاجة لتحديث user_id لأنه معرّف المستند
         final dataToSave = Map<String, dynamic>.from(_data!);
-        dataToSave.remove('id'); // إزالة المعرف قبل الحفظ
+        dataToSave.remove('id');
 
-        // استخدام Firestore للتحديث أو الإنشاء
-        await FirebaseFirestore.instance
-            .collection('merchants')
-            .doc(user.uid)
-            .set(dataToSave, SetOptions(merge: true)); // استخدام .set مع merge
+        await FirebaseFirestore.instance.collection('merchants').doc(user.uid).set(dataToSave, SetOptions(merge: true));
 
-        // مزامنة اسم المحل مع جدول users (إذا كان موجوداً)
         if (dataToSave['store_name'] != null && (dataToSave['store_name'] as String).isNotEmpty) {
-          // هذا الجزء يفترض وجود collection اسمها users بنفس الـ uid
-           await FirebaseFirestore.instance.collection('users').doc(user.uid).set({'store_name': dataToSave['store_name']}, SetOptions(merge: true));
-          
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).set({'store_name': dataToSave['store_name']}, SetOptions(merge: true));
           var settingsBox = await Hive.openBox('settingsBox');
           await settingsBox.put('store_name', dataToSave['store_name']);
         }
 
         if (showMsg) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الإعدادات بنجاح!')));
+          final loc = AppLocalizations.of(context);
+          if (loc != null) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.settingsSavedSuccess)));
+          }
         }
       } catch (e, stack) {
-        print('خطأ أثناء حفظ الإعدادات: $e\n$stack');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ أثناء حفظ الإعدادات: $e')),
-        );
+        final loc = AppLocalizations.of(context);
+        final msg = loc?.settingsSaveError(e.toString()) ?? 'Error saving settings: $e';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
 
   Future<void> _deleteAccount() async {
+    final loc = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف الحساب'),
-        content: const Text('هل أنت متأكد من حذف حسابك نهائياً؟'),
+        title: Text(loc?.deleteAccountTitle ?? 'Delete'),
+        content: Text(loc?.deleteAccountConfirm ?? 'Delete?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(loc?.cancel ?? 'Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('حذف'),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(loc?.delete ?? 'Delete'),
           ),
         ],
       ),
     );
     if (confirm == true) {
-      // استخدام Firebase Auth
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // حذف البيانات من Firestore
         await FirebaseFirestore.instance.collection('merchants').doc(user.uid).delete();
-        // تسجيل الخروج من Firebase
         await FirebaseAuth.instance.signOut();
         if (mounted) {
           Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
@@ -207,17 +190,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final user = FirebaseAuth.instance.currentUser;
-    print('DEBUG: build() called, user = \${user?.uid}');
+
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // -- هذا هو الجزء الجديد لتشخيص المشكلة --
-    // إذا كان هناك خطأ، اعرضه بوضوح مع زر إعادة المحاولة
     if (_fetchError != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('خطأ في البيانات')),
+        appBar: AppBar(title: Text(loc?.dataErrorTitle ?? 'Error')),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Center(
@@ -226,9 +208,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.red, size: 60),
                 const SizedBox(height: 20),
-                const Text(
-                  'حدث خطأ أثناء استجلاب بيانات المتجر',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  loc?.storeDataFetchError ?? 'Error fetching data',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
@@ -239,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    _fetchError!, // عرض رسالة الخطأ التي تم تخزينها
+                    _fetchError!,
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.red, fontSize: 14),
                   ),
@@ -248,7 +230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ElevatedButton.icon(
                   onPressed: _fetchData,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('إعادة المحاولة'),
+                  label: Text(loc?.retry ?? 'Retry'),
                 ),
               ],
             ),
@@ -257,8 +239,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
-    // إذا لم يكن هناك خطأ، استمر في عرض الواجهة كالمعتاد
-    // هذا المنطق يعالج حالة التاجر الجديد الذي ليس لديه بيانات بعد
     if (user != null && _data == null) {
       _data = {
         'id': user.uid,
@@ -277,13 +257,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     if (_data == null) {
-      // This case should now only be hit if the user is not logged in.
       return Scaffold(
         appBar: AppBar(
-          title: const Text('الإعدادات'),
+          title: Text(loc?.settingsTitle ?? 'Settings'),
           leading: const HomeButton(),
         ),
-        body: const Center(child: Text('يرجى تسجيل الدخول لعرض الإعدادات.')),
+        body: Center(child: Text(loc?.loginToViewSettings ?? 'Login to view settings.')),
       );
     }
 
@@ -295,7 +274,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         leading: const HomeButton(),
         title: Row(
           children: [
-            const Text('لوحة تحكم تاجر'),
+            Text(loc?.merchantDashboardTitle ?? 'Merchant Dashboard'),
             const SizedBox(width: 10),
             Flexible(
               child: Text(
@@ -325,7 +304,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          // معلومات المتجر مرتبة تحت الصورة مباشرة
           Card(
             margin: const EdgeInsets.symmetric(vertical: 8),
             elevation: 2,
@@ -337,19 +315,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   _InfoTile(
                     icon: Icons.store,
-                    label: 'اسم المتجر',
+                    label: loc?.storeName ?? 'اسم المتجر',
                     value: (_data!['store_name'] ?? '').toString(),
                   ),
                   const Divider(),
                   _InfoTile(
                     icon: Icons.category,
-                    label: 'نوع النشاط',
+                    label: loc?.activityType ?? 'نوع النشاط',
                     value: (_data!['activity_type'] ?? '').toString(),
                   ),
                   const Divider(),
                   _InfoTile(
                     icon: Icons.location_on,
-                    label: 'الموقع',
+                    label: loc?.mapLocationLabel ?? 'الموقع',
                     value: _data!['location'] is Map
                         ? 'Lat: ' + (_data!['location']['lat']?.toStringAsFixed(5) ?? '-') + ', Lng: ' + (_data!['location']['lng']?.toStringAsFixed(5) ?? '-')
                         : (_data!['location'] ?? '').toString(),
@@ -357,22 +335,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(),
                   _InfoTile(
                     icon: Icons.email,
-                    label: 'البريد الإلكتروني',
+                    label: loc?.email ?? 'البريد الإلكتروني',
                     value: (_data!['email'] ?? '').toString(),
                   ),
                   const Divider(),
                   _InfoTile(
                     icon: Icons.phone,
-                    label: 'رقم الهاتف',
+                    label: loc?.phone ?? 'رقم الهاتف',
                     value: (_data!['phone'] ?? '').toString(),
                   ),
                   const Divider(),
                   _InfoTile(
                     icon: Icons.calendar_today,
-                    label: 'تاريخ الإنشاء',
+                    label: loc?.createdAt ?? 'تاريخ الإنشاء',
                     value: (_data!['created_at'] is Timestamp)
                         ? ((_data!['created_at'] as Timestamp).toDate().toIso8601String().split('T').first)
-                        : 'غير محدد',
+                        : (loc?.unspecified ?? 'غير محدد'),
                   ),
                 ],
               ),
@@ -381,39 +359,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 12),
           TextFormField(
             initialValue: (_data!['store_name'] != null && (_data!['store_name'] as String).isNotEmpty) ? _data!['store_name'] : '',
-            decoration: const InputDecoration(labelText: 'اسم المحل'),
+            decoration: InputDecoration(labelText: loc?.storeName ?? 'اسم المحل'),
             onChanged: (val) => _data!['store_name'] = val,
           ),
           const SizedBox(height: 12),
-          // اختيار الفئة من قائمة
           DropdownButtonFormField<String>(
             value: _data!['activity_type'],
             items: activityTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
-            decoration: const InputDecoration(labelText: 'نوع النشاط'),
+            decoration: InputDecoration(labelText: loc?.activityType ?? 'نوع النشاط'),
             onChanged: (val) => setState(() => _data!['activity_type'] = val),
           ),
           const SizedBox(height: 12),
-          // رقم الهاتف
           TextFormField(
             initialValue: _data!['phone'] ?? '',
-            decoration: const InputDecoration(labelText: 'رقم الهاتف'),
+            decoration: InputDecoration(labelText: loc?.phone ?? 'رقم الهاتف'),
             keyboardType: TextInputType.phone,
             onChanged: (val) => _data!['phone'] = val,
           ),
           const SizedBox(height: 12),
-          // --- ساعات العمل ---
-          Text('ساعات العمل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(loc?.workHoursTitle ?? 'ساعات العمل', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
           ...List.generate(7, (i) {
-            final days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+            final days = [
+              loc?.daySunday ?? 'الأحد',
+              loc?.dayMonday ?? 'الاثنين',
+              loc?.dayTuesday ?? 'الثلاثاء',
+              loc?.dayWednesday ?? 'الأربعاء',
+              loc?.dayThursday ?? 'الخميس',
+              loc?.dayFriday ?? 'الجمعة',
+              loc?.daySaturday ?? 'السبت',
+            ];
             final workHours = (_data!['work_hours'] ?? {})[days[i]] ?? {'from': '', 'to': ''};
             return Row(
               children: [
-                SizedBox(width: 70, child: Text(days[i])),
-                Expanded(
+                SizedBox(width: 70, child: Text(days[i]))
+                ,Expanded(
                   child: TextFormField(
                     initialValue: workHours['from'],
-                    decoration: const InputDecoration(labelText: 'من'),
+                    decoration: InputDecoration(labelText: loc?.fromLabel ?? 'من'),
                     onChanged: (val) {
                       final wh = Map<String, dynamic>.from(_data!['work_hours'] ?? {});
                       wh[days[i]] = {'from': val, 'to': workHours['to']};
@@ -425,7 +408,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Expanded(
                   child: TextFormField(
                     initialValue: workHours['to'],
-                    decoration: const InputDecoration(labelText: 'إلى'),
+                    decoration: InputDecoration(labelText: loc?.toLabel ?? 'إلى'),
                     onChanged: (val) {
                       final wh = Map<String, dynamic>.from(_data!['work_hours'] ?? {});
                       wh[days[i]] = {'from': workHours['from'], 'to': val};
@@ -437,34 +420,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           }),
           const SizedBox(height: 12),
-          // روابط الاتصال
           TextFormField(
             initialValue: _data!['whatsapp'] ?? '',
-            decoration: const InputDecoration(labelText: 'رابط واتساب (اختياري)'),
+            decoration: InputDecoration(labelText: loc?.whatsappLinkOptional ?? 'رابط واتساب (اختياري)'),
             onChanged: (val) => _data!['whatsapp'] = val,
           ),
           const SizedBox(height: 12),
           TextFormField(
             initialValue: _data!['facebook'] ?? '',
-            decoration: const InputDecoration(labelText: 'رابط فيسبوك (اختياري)'),
+            decoration: InputDecoration(labelText: loc?.facebookLinkOptional ?? 'رابط فيسبوك (اختياري)'),
             onChanged: (val) => _data!['facebook'] = val,
           ),
           const SizedBox(height: 12),
           TextFormField(
             initialValue: _data!['instagram'] ?? '',
-            decoration: const InputDecoration(labelText: 'رابط إنستغرام (اختياري)'),
+            decoration: InputDecoration(labelText: loc?.instagramLinkOptional ?? 'رابط إنستغرام (اختياري)'),
             onChanged: (val) => _data!['instagram'] = val,
           ),
           const SizedBox(height: 12),
-          // وصف قصير
           TextFormField(
             initialValue: _data!['description'] ?? '',
-            decoration: const InputDecoration(labelText: 'وصف قصير عن المتجر (اختياري)'),
+            decoration: InputDecoration(labelText: loc?.shortDescriptionLabel ?? 'وصف قصير عن المتجر (اختياري)'),
             maxLines: 2,
             onChanged: (val) => _data!['description'] = val,
           ),
           const SizedBox(height: 12),
-          // الموقع على الخريطة
           Row(
             children: [
               Expanded(
@@ -472,17 +452,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   initialValue: _data!['location'] is Map
                       ? 'Lat: ' + (_data!['location']['lat']?.toStringAsFixed(5) ?? '-') + ', Lng: ' + (_data!['location']['lng']?.toStringAsFixed(5) ?? '-')
                       : (_data!['location'] ?? ''),
-                  decoration: const InputDecoration(labelText: 'الموقع (إحداثيات أو عنوان)'),
+                  decoration: InputDecoration(labelText: loc?.mapLocationLabel ?? 'الموقع (إحداثيات أو عنوان)'),
                   onChanged: (val) => _data!['location'] = val,
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.map, color: Colors.deepPurple),
-                tooltip: 'تحديد الموقع على الخريطة',
+                tooltip: loc?.pickLocationTooltip ?? 'تحديد الموقع على الخريطة',
                 onPressed: () {
-                  // TODO: ربط شاشة اختيار الموقع
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('سيتم دعم اختيار الموقع من الخريطة قريباً.')),
+                    SnackBar(content: Text(loc?.mapPickSoon ?? 'سيتم دعم اختيار الموقع من الخريطة قريباً.')),
                   );
                 },
               ),
@@ -492,19 +471,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton.icon(
             onPressed: _saveSettings,
             icon: const Icon(Icons.save),
-            label: const Text('حفظ التغييرات'),
+            label: Text(loc?.saveChanges ?? 'حفظ التغييرات'),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: _deleteAccount,
             icon: const Icon(Icons.delete, color: Colors.red),
-            label: const Text('حذف الحساب', style: TextStyle(color: Colors.red)),
+            label: Text(loc?.deleteAccountButton ?? 'حذف الحساب', style: const TextStyle(color: Colors.red)),
           ),
           const SizedBox(height: 24),
-          // --- إدارة الأقسام/الخدمات ---
-          const SizedBox(height: 24),
-          Text('أقسام/خدمات المحل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(loc?.servicesSectionTitle ?? 'أقسام/خدمات المحل', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
           ...List.generate((_data!['services'] ?? []).length, (i) {
             final service = (_data!['services'] ?? [])[i];
@@ -513,7 +490,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Expanded(
                   child: TextFormField(
                     initialValue: service,
-                    decoration: InputDecoration(labelText: 'خدمة/قسم رقم ${i + 1}'),
+                    decoration: InputDecoration(labelText: (loc?.serviceNumberLabel(i + 1) ?? 'خدمة/قسم رقم ${i + 1}')),
                     onChanged: (val) {
                       final services = List<String>.from(_data!['services'] ?? []);
                       services[i] = val;
@@ -539,12 +516,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               setState(() => _data!['services'] = services);
             },
             icon: const Icon(Icons.add),
-            label: const Text('إضافة خدمة/قسم'),
+            label: Text(loc?.addServiceButton ?? 'إضافة خدمة/قسم'),
           ),
           const SizedBox(height: 12),
-          // --- تفعيل/تعطيل الإعلانات ---
           SwitchListTile(
-            title: const Text('تفعيل الإعلانات داخل التطبيق'),
+            title: Text(loc?.adsEnabledTitle ?? 'تفعيل الإعلانات داخل التطبيق'),
             value: _data!['ads_enabled'] ?? true,
             onChanged: (val) {
               setState(() => _data!['ads_enabled'] = val);
@@ -552,9 +528,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeColor: Colors.deepPurple,
           ),
           const SizedBox(height: 12),
-          // --- التحكم في ظهور المحل في المتجر ---
           SwitchListTile(
-            title: const Text('إظهار المحل في المتجر للعملاء'),
+            title: Text(loc?.visibleInStoreTitle ?? 'إظهار المحل في المتجر للعملاء'),
             value: _data!['visible_in_store'] ?? true,
             onChanged: (val) {
               setState(() => _data!['visible_in_store'] = val);
@@ -562,19 +537,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeColor: Colors.deepPurple,
           ),
           const SizedBox(height: 12),
-          // --- تعطيل التواصل مع المحل ---
           SwitchListTile(
-            title: const Text('تعطيل التواصل مع المحل (واتساب/فيسبوك/إنستغرام)'),
+            title: Text(loc?.disableContactTitle ?? 'تعطيل التواصل مع المحل (واتساب/فيسبوك/إنستغرام)'),
             value: _data!['disable_contact'] ?? false,
             onChanged: (val) {
               setState(() => _data!['disable_contact'] = val);
             },
             activeColor: Colors.deepPurple,
           ),
-          const SizedBox(height: 12),
-          // --- ربط المحل بحسابات الوصول الاجتماعي ---
           const SizedBox(height: 24),
-          Text('ربط المحل بحسابات الوصول الاجتماعي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(loc?.socialAccountsTitle ?? 'ربط المحل بحسابات الوصول الاجتماعي', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -582,7 +554,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('سيتم دعم ربط Google قريباً.')),
+                    SnackBar(content: Text(loc?.linkGoogleSoon ?? 'سيتم دعم ربط Google قريباً.')),
                   );
                 },
                 icon: const Icon(Icons.account_circle, color: Colors.red),
@@ -592,7 +564,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('سيتم دعم ربط Facebook قريباً.')),
+                    SnackBar(content: Text(loc?.linkFacebookSoon ?? 'سيتم دعم ربط Facebook قريباً.')),
                   );
                 },
                 icon: const Icon(Icons.facebook, color: Colors.blue),
@@ -602,7 +574,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('سيتم دعم ربط Instagram قريباً.')),
+                    SnackBar(content: Text(loc?.linkInstagramSoon ?? 'سيتم دعم ربط Instagram قريباً.')),
                   );
                 },
                 icon: const Icon(Icons.camera_alt, color: Colors.purple),
@@ -618,7 +590,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// إضافة ويدجت لعرض صف معلومات بشكل أنيق
 class _InfoTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -635,7 +606,7 @@ class _InfoTile extends StatelessWidget {
             color: Colors.deepPurple.withOpacity(0.08),
             borderRadius: BorderRadius.circular(8),
           ),
-          padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
           child: Icon(icon, color: Colors.deepPurple, size: 22),
         ),
         const SizedBox(width: 12),
