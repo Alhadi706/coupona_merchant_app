@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:coupona_merchant/gen_l10n/app_localizations.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
@@ -17,12 +18,12 @@ class _SupportScreenState extends State<SupportScreen> {
   String? _merchantCode;
   bool _loadingCode = true;
 
-  final List<Map<String, String>> _faq = [
-    {'q': 'كيف أضيف عرض جديد؟', 'a': 'من لوحة التحكم اختر "إضافة عرض" واملأ البيانات المطلوبة.'},
-    {'q': 'كيف أغير كلمة المرور؟', 'a': 'من الإعدادات يمكنك تغيير كلمة المرور.'},
-    {'q': 'كيف أتابع نقاط الزبائن؟', 'a': 'من شاشة الزبائن يمكنك استعراض النقاط والتفاصيل.'},
-    {'q': 'كيف أتواصل مع الدعم؟', 'a': 'استخدم زر "تواصل مع الدعم" أو أرسل مشكلة عبر النموذج.'},
-  ];
+  List<Map<String, String>> _faqLocalized(AppLocalizations loc) => [
+        {'q': loc.faqAddOfferQuestion, 'a': loc.faqAddOfferAnswer},
+        {'q': loc.faqChangePasswordQuestion, 'a': loc.faqChangePasswordAnswer},
+        {'q': loc.faqTrackPointsQuestion, 'a': loc.faqTrackPointsAnswer},
+        {'q': loc.faqContactSupportQuestion, 'a': loc.faqContactSupportAnswer},
+      ];
 
   @override
   void initState() {
@@ -67,37 +68,42 @@ class _SupportScreenState extends State<SupportScreen> {
     setState(() => _sending = false);
     _msgController.clear();
     _typeController.clear();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال رسالتك للدعم')));
+    final loc = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(loc?.supportMessageSent ?? 'Sent')),
+    );
   }
 
   void _contactSupport() {
+    final loc = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تواصل مع الدعم'),
-        content: const Text('راسلنا عبر البريد: support@coupona.com\nأو عبر الواتساب: 0555555555'),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق'))],
+        title: Text(loc?.supportContactDialogTitle ?? ''),
+        content: Text(loc?.supportContactInfo('support@coupona.com', '0555555555') ?? ''),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: Text(loc?.close ?? 'Close'))],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الدعم والمساعدة'),
+        title: Text(loc?.supportHelpTitle ?? ''),
         backgroundColor: Colors.deepPurple.shade700,
         actions: [
           IconButton(
             icon: const Icon(Icons.key),
-            tooltip: 'عرض رمز التاجر',
+            tooltip: loc?.showMerchantCodeTooltip,
             onPressed: _loadingCode || _merchantCode == null || _merchantCode!.isEmpty
                 ? null
                 : () {
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('رمز التاجر المختصر'),
+                        title: Text(loc?.merchantShortCodeTitle ?? ''),
                         content: Row(
                           children: [
                             Expanded(
@@ -108,10 +114,10 @@ class _SupportScreenState extends State<SupportScreen> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.copy),
-                              tooltip: 'نسخ الرمز',
+                              tooltip: loc?.copyCodeTooltip,
                               onPressed: () {
                                 Clipboard.setData(ClipboardData(text: _merchantCode!));
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ رمز التاجر')));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.copiedMerchantCode ?? 'Copied')));
                               },
                             ),
                           ],
@@ -119,7 +125,7 @@ class _SupportScreenState extends State<SupportScreen> {
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx),
-                            child: const Text('إغلاق'),
+                            child: Text(loc?.close ?? 'Close'),
                           ),
                         ],
                       ),
@@ -141,7 +147,7 @@ class _SupportScreenState extends State<SupportScreen> {
                       child: Row(
                         children: [
                           Text(
-                            'رمز التاجر: ',
+                            loc?.merchantCodePrefix ?? '',
                             style: const TextStyle(fontSize: 14, color: Colors.white),
                           ),
                           SelectableText(
@@ -150,10 +156,10 @@ class _SupportScreenState extends State<SupportScreen> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.copy, color: Colors.white, size: 20),
-                            tooltip: 'نسخ الرمز',
+                            tooltip: loc?.copyCodeTooltip,
                             onPressed: () {
                               Clipboard.setData(ClipboardData(text: _merchantCode!));
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ رمز التاجر')));
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc?.copiedMerchantCode ?? 'Copied')));
                             },
                           ),
                         ],
@@ -161,16 +167,16 @@ class _SupportScreenState extends State<SupportScreen> {
                     )
                   : const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('لا يوجد رمز تاجر', style: TextStyle(color: Colors.white)),
+                      child: Text('—', style: TextStyle(color: Colors.white)),
                     ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('الأسئلة الشائعة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          Text(loc?.supportFaqTitle ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
           const SizedBox(height: 12),
-          ..._faq.map((item) => ExpansionTile(
+          ..._faqLocalized(loc!).map((item) => ExpansionTile(
                 title: Text(item['q']!),
                 children: [
                   Padding(
@@ -183,27 +189,27 @@ class _SupportScreenState extends State<SupportScreen> {
           ElevatedButton.icon(
             onPressed: _contactSupport,
             icon: const Icon(Icons.support_agent),
-            label: const Text('تواصل مع الدعم'),
+            label: Text(loc?.contactSupportButton ?? ''),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
           ),
           const SizedBox(height: 32),
-          const Text('إرسال مشكلة أو اقتراح', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(loc?.sendIssueSuggestionTitle ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 10),
           TextField(
             controller: _typeController,
-            decoration: const InputDecoration(labelText: 'نوع الرسالة (مشكلة/اقتراح)'),
+            decoration: InputDecoration(labelText: loc?.messageTypeLabel),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _msgController,
-            decoration: const InputDecoration(labelText: 'اكتب رسالتك هنا'),
+            decoration: InputDecoration(labelText: loc?.messageInputLabel),
             minLines: 2,
             maxLines: 5,
           ),
           const SizedBox(height: 10),
           ElevatedButton(
             onPressed: _sending ? null : _sendSupportMessage,
-            child: _sending ? const CircularProgressIndicator() : const Text('إرسال', style: TextStyle(color: Colors.white)),
+            child: _sending ? const CircularProgressIndicator() : Text(loc?.sendButton ?? '', style: const TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
           ),
         ],
