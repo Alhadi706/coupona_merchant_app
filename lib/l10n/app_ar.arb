@@ -269,4 +269,7 @@
   ,"activityPharmacy": "صيدلية"
   ,"activitySupermarket": "سوبرماركت"
   ,"activityOther": "آخر"
+  ,"suggestedSqlLabel": "SQL المقترح:"
+  ,"pointsPrefix": "النقاط:"
+  ,"errorPrefix": "خطأ:"
 }

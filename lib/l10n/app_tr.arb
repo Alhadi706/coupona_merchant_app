@@ -269,4 +269,7 @@
   ,"activityPharmacy": "Eczane"
   ,"activitySupermarket": "Süpermarket"
   ,"activityOther": "Diğer"
+  ,"suggestedSqlLabel": "Önerilen SQL:" 
+  ,"pointsPrefix": "Puanlar:" 
+  ,"errorPrefix": "Hata:" 
  }

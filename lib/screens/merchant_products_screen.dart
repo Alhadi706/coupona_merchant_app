@@ -150,7 +150,7 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
       final bytes = file.bytes ?? await file.readStream!.fold<List<int>>([], (p, e) { p.addAll(e); return p; });
       final content = utf8.decode(bytes);
       final rows = const CsvToListConverter(eol: '\n', shouldParseNumbers: false).convert(content);
-      if (rows.isEmpty) throw 'ملف فارغ';
+    if (rows.isEmpty) throw (loc?.csvFileEmpty ?? 'Empty file');
       final first = rows.first.map((c) => c.toString().trim()).toList();
       final lower = first.map((c) => c.toLowerCase()).toList();
   final hasHeader = lower.any((h) => _nameHeaders.contains(h));

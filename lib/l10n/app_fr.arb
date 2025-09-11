@@ -269,4 +269,7 @@
   ,"activityPharmacy": "Pharmacie"
   ,"activitySupermarket": "Supermarché"
   ,"activityOther": "Autre"
+  ,"suggestedSqlLabel": "Suggested SQL:"
+  ,"pointsPrefix": "Points:"
+  ,"errorPrefix": "Erreur:"
 }
